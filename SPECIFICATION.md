@@ -1,30 +1,35 @@
-# pkbk
+# Specification
 
-## bytecode
+## Bytecode
+
+Single-byte instruction words appear in the following format:
 
 `1 b a a o o o o`
 
-b => if 1, pop top byte, if that top byte is not 255 skip current instruction
-a => variable argument counter
-o => opcode
+If the least-significant-bit is not a 1, it is interpreted as a "halt" 
+instruction, stopping the machine. This way, uninitialized values in ROM 
+(zeroes, by default) will halt execution.
 
-If the first bit is not a 1, it is interpreted as a "halt" instruction, stopping the machine.
+If bit `b` is 1, pop the top byte on the stack before executing the opcode. If 
+that top byte is not 255 (or -1), skip the current instruction.
 
-### opcodes and stack effects
+`a` is the variable argument byte counter, taking values from 1 to 4.
+
+`o` refers to the opcode, one of 16 stack-manipulation instructions:
 
 arg* => "arg" is a variable amount of bytes
 argW => "arg" is the machine's word size (in # of bytes)
 arg(1-4) => takes 1-4 bytes
 
-`lod` ( addrW -- data* ) fetch data at RAM[addr]
-`str` ( data* addrW -- ) store data at RAM[addr]
 `asb` ( a* b* -- b+a* b-a* ) add and subtract
 `dmd` ( a* b* -- b%a* b/a* ) divide and modulo
 `aor` ( a* b* -- b&a* b|a* ) bitwise and & bitwise or
 `mxr` ( a* b* -- bxa* b^a* ) multiply and xor
 `swp` ( a* b* -- b* a* ) swap top 2 values
-`shf` ( n* -- n>>1* n<<1* ) left and right shift
 `cmp` ( a* b* -- gl1 eq1) eq1 = 255 if a and b are equal, otherwise 0. If eq1 is 0, gl1 will be 255 if b>a, otherwise 0.
+`str` ( data* addrW -- ) store data at RAM[addr]
+`lod` ( addrW -- data* ) fetch data at RAM[addr]
+`shf` ( n* -- n>>1* n<<1* ) left and right shift
 `dup` ( n* -- n* n* ) duplicate top value
 `drp` ( n* --  ) discard top value
 `psh` ( data* -- ) push data to return stack
