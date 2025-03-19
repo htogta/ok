@@ -3,6 +3,10 @@
 This repository contains the specification and reference implementation for the 
 `ok` (virtual) computer.
 
+The primary reference implementation is written in the D programming language,
+using D's `-betterC` flag in order to allow for low-level memory management. This 
+implementation is stored in the `d` directory.
+
 ## Features
 
 `ok` is a simple stack-based virtual machine designed with the following goals 

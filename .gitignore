@@ -1,0 +1,16 @@
+d/.dub
+d/docs.json
+d/__dummy.html
+d/docs/
+d/okvm
+d/okvm.so
+d/okvm.dylib
+d/okvm.dll
+d/okvm.a
+d/okvm.lib
+d/okvm-test-*
+d/*.exe
+d/*.pdb
+d/*.o
+d/*.obj
+d/*.lst
