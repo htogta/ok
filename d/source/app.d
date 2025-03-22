@@ -3,9 +3,11 @@ extern(C) void main()
   import core.stdc.stdio : printf;
 
 	struct VM {
-	  static immutable size_t STACK_SIZE = 256;
+	  static immutable size_t STACK_SIZE = 512;
 	  byte[STACK_SIZE] stack;
-	  size_t sp;
+	  byte[STACK_SIZE] rstack;
+	  size_t sp; // main stack pointer
+	  size_t rp; // return stack pointer
 
 	  void init() {
 	    sp = 0;
@@ -21,6 +23,23 @@ extern(C) void main()
 
 	  byte pop() {
 	    if (sp > 0) {
+	      return stack[--sp];
+	    } else {
+	      printf("Stack underflow.");
+	      return 0;
+	    }
+	  }
+
+	  void rpush(byte value) {
+	    if (rp < STACK_SIZE) {
+	      stack[rp++] = value;
+	    } else {
+	      printf("Stack overflow.\n");
+	    }
+	  }
+
+	  byte rpop() {
+	    if (rp > 0) {
 	      return stack[--sp];
 	    } else {
 	      printf("Stack underflow.");
