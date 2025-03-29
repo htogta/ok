@@ -1,6 +1,0 @@
-name "okvm"
-description "A minimal D application."
-authors "hitogata"
-copyright "Copyright © 2025, hitogata"
-license "proprietary"
-buildOptions "betterC"
