@@ -18,25 +18,40 @@ that top byte is not 255 (or -1), skip the current instruction.
 `o` refers to the opcode, one of 16 stack-manipulation instructions:
 
 arg* => "arg" is a variable amount of bytes
+
 argW => "arg" is the machine's word size (in # of bytes)
+
 arg(1-4) => takes 1-4 bytes
 
-`asb` ( a* b* -- b+a* b-a* ) add and subtract
-`dmd` ( a* b* -- b%a* b/a* ) divide and modulo
-`aor` ( a* b* -- b&a* b|a* ) bitwise and & bitwise or
-`mxr` ( a* b* -- bxa* b^a* ) multiply and xor
-`swp` ( a* b* -- b* a* ) swap top 2 values
-`cmp` ( a* b* -- gl1 eq1) eq1 = 255 if a and b are equal, otherwise 0. If eq1 is 0, gl1 will be 255 if b>a, otherwise 0.
-`str` ( data* addrW -- ) store data at RAM[addr]
-`lod` ( addrW -- data* ) fetch data at RAM[addr]
-`shf` ( n* -- n>>1* n<<1* ) left and right shift
-`dup` ( n* -- n* n* ) duplicate top value
-`drp` ( n* --  ) discard top value
-`psh` ( data* -- ) push data to return stack
-`pop` ( -- data* ) pop data from return stack
-`jmp` ( dest* -- ) jump to dest
-`cal` ( dest* -- origW ) jump to dest and push original location
-`lit` ( -- val* ) push immediate bytes
+- `asb` ( a* b* -- b+a* b-a* ) add and subtract
+- `dmd` ( a* b* -- b%a* b/a* ) divide and modulo
+- `aor` ( a* b* -- b&a* b|a* ) bitwise and & bitwise or
+- `mxr` ( a* b* -- bxa* b^a* ) multiply and xor
+- `swp` ( a* b* -- b* a* ) swap top 2 values
+- `cmp` ( a* b* -- gl1 eq1) eq1 = 255 if a and b are equal, otherwise 0. If eq1 is 0, gl1 will be 255 if b>a, otherwise 0.
+- `str` ( data* addrW -- ) store data at RAM[addr]
+- `lod` ( addrW -- data* ) fetch data at RAM[addr]
+- `dup` ( n* -- n* n* ) duplicate top value
+- `drp` ( n* --  ) discard top value
+- `psh` ( data* -- ) push data to return stack
+- `pop` ( -- data* ) pop data from return stack
+- `jmp` ( dest* -- ) jump to dest
+- `lit` ( -- val* ) push immediate bytes
+- `syn` ( dev* -- ) synchronize IO buffers for device pointer at each byte of RAM[addr]
+
+This instruction, rather than using `aa` to determine argument size, uses `aa` to determine which arg to push onto stack:
+
+0 = stack pointer (one byte)
+
+1 = return pointer (one byte)
+
+2 = current program counter value (one word)
+
+3 = machine word size in bytes (one byte)
+
+- `dbg` ( -- debug ) the "debug" instruction pushes one of the above debug values to the stack
+
+%% NOTE: division by 0 returns 0 %%
 
 ## assembly language features
 
