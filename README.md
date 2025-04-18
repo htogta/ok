@@ -1,13 +1,7 @@
 # ok - A Minimal Stack-Based Virtual Machine
 
-This repository contains the specification and some example implementations for 
-the `ok` (virtual) computer.
-
-## Implementations
-
-See `python` for the Python implementation. Later an emulator will be written
-in a lower-level language to improve performance, but for now this 
-implementation exists for the sake of rapid prototyping.
+This repository contains the specification and reference implementation for the 
+`ok` (virtual) computer.
 
 ## Goals
 
