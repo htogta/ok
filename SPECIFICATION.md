@@ -37,7 +37,10 @@ arg(1-4) => takes 1-4 bytes
 - `pop` ( -- data* ) pop data from return stack
 - `jmp` ( dest* -- ) jump to dest
 - `lit` ( -- val* ) push immediate bytes
-- `syn` ( dev* -- ) synchronize IO buffers for device pointer at each byte of RAM[addr]
+- `syn` ( portW -- ) synchronize IO buffers for device pointer (port) at an address
+
+If the argument passed to `syn` is not found in the first 16 words of RAM (device port table),
+then the machine panics.
 
 This instruction, rather than using `aa` to determine argument size, uses `aa` to determine which arg to push onto stack:
 
