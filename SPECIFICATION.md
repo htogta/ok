@@ -23,10 +23,10 @@ argW => "arg" is the machine's word size (in # of bytes)
 
 arg(1-4) => takes 1-4 bytes
 
-- `asb` ( a* b* -- b+a* b-a* ) add and subtract
+- `asb` ( a* b* -- b-a* b+a* ) add and subtract
 - `dmd` ( a* b* -- b%a* b/a* ) divide and modulo
-- `aor` ( a* b* -- b&a* b|a* ) bitwise and & bitwise or
-- `mxr` ( a* b* -- bxa* b^a* ) multiply and xor
+- `aor` ( a* b* -- b|a* b&a* ) bitwise and & bitwise or
+- `mxr` ( a* b* -- b^a* bxa* ) multiply and xor
 - `swp` ( a* b* -- b* a* ) swap top 2 values
 - `cmp` ( a* b* -- gl1 eq1) eq1 = 255 if a and b are equal, otherwise 0. If eq1 is 0, gl1 will be 255 if b>a, otherwise 0.
 - `str` ( data* addrW -- ) store data at RAM[addr]
@@ -54,29 +54,37 @@ This instruction, rather than using `aa` to determine argument size, uses `aa` t
 
 - `dbg` ( -- debug ) the "debug" instruction pushes one of the above debug values to the stack
 
-%% NOTE: division by 0 returns 0 %%
+%% NOTE: division and mod by 0 returns 0, but sets the
+VM status to "panic" %%
 
 ## assembly language features
 
-All assembly instructions are simply the opcode names shown above, except for `lit`.
-To push a literal, use `#` followed by some number of bytes as case-insensitive hexadecimal numbers:
-`#ff` pushes a single byte, 255.
-`#00ff` pushes two bytes, but still just the number 255, only with leading zeroes.
-The assembly language uses big-endian number literals, so `#00ff` will result in `ff` or 255 being at the top of the stack.
+All assembly instructions are simply the opcode names shown above, except for 
+`lit`. To push a literal, use `#` followed by some number of bytes as 
+case-insensitive hexadecimal numbers:
 
-As a result, numbers are stored on the stack with the most-significant-byte closest to the top.
+`#ff` pushes a single byte, 255.
+
+`#00ff` pushes two bytes, but still just the number 255, only with leading 
+zeroes.
+
+The assembly language uses big-endian number literals, so `#00ff` will result in 
+`ff` or 255 being at the top of the stack.
+
+As a result, numbers are stored on the stack with the most-significant-byte 
+closest to the top. %% TODO are we sure? %%
 
 Prepend with a `?` to set the `b` flag:
-`?jmp` = conditional jump if top is 255
+
+- `?jmp` = conditional jump if top is 255
 
 Append a number from 1 to 4 for variable args:
-`cmp1` compares 2 single byte arguments 
-`cmp2` compares 2 two-byte arguments, etc.
+
+- `cmp1` compares 2 single byte arguments 
+- `cmp2` compares 2 two-byte arguments, etc.
 
 Appending no number implies a variable-argument size of however many bytes are 
 in a "word", i.e. the size of a pointer into RAM or ROM. 
-
-Note that byte literals start with a # followed by 2 hex digits (case insensitive)
 
 ### FORTH-style compilation mode
 
