@@ -1,4 +1,5 @@
 #include "okvm.h"
+#include "okemu.h"
 #include <stdlib.h>
 
 // TODO maybe refactor codebase to just define stack data structure in here?
@@ -41,6 +42,22 @@ static unsigned char fetch(OkVM* vm) {
   unsigned char instr = vm->rom[vm->pc];
   vm->pc++;
   return instr;
+}
+
+static void trigger_device(OkVM* vm, size_t port) {
+  // here's how the port system works:
+  // the WORD stored at RAM[port] is the SIZE of the device buffer
+  // that value and a pointer to the next addr gets passed to a 
+  // function, like so:
+  size_t buffer_size = 0;
+  for (size_t i = 0; i < VM_WORD_SIZE; i++) {
+    buffer_size = (buffer_size << 8) | vm->ram[port + i];
+  }
+
+  // if emulating fails, set status to panic
+  if (!emulate_device(port + VM_WORD_SIZE, buffer_size)) {
+    vm->status = VM_PANIC; 
+  } // TODO rework this prob
 }
 
 static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize) {
@@ -123,28 +140,11 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       for (size_t i = 0; i < argsize + 1; i++) {
         stack_push(&(vm->dst), fetch(vm));
       }
-    case 14: // syn TODO
-      // this guy's complicated. It should pop an address,
-      // and then use that as the start of a hardcoded "buffer" 
-      // for that device.
-
-      // So if the framebuffer starts at 0xAABB, for example,
-      // you would run `syn` on 0xAABB to iterate over all bytes
-      // in the framebuffer (starting at 0xAABB) and render
-      // them all to the "screen".
-      
-      // input is treated as a completely different device,
-      // with a different address for its "buffer".
-
-      // this way you get the simplicity of memory-mapped I/O,
-      // but it's easy to also hook this part up to an emulator.
-
-      // all device addresses should be stored in the range 
-      // RAM[0] to RAM[(16 * WORD_SIZE) - 1]
-      // allowing for up to 16 devices total,
-      // so for a 32-bit machine, that's addresses 0x00 to 0x3f.
-      // 24-bit machine, that's 0x00 to 0x2f
-      // 16-bit machine, that's 0x00 to 0x1f
+    case 14: // syn (this guy's complicated)
+      // pop an address
+      addr = (size_t) stack_popn(&(vm->dst), VM_WORD_SIZE);
+      trigger_device(vm, addr); // TODO this function is essentially
+      // user-implemented, it's an I/O trigger
       break;
     case 15: // dbg
       switch (argsize) {
