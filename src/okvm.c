@@ -1,26 +1,6 @@
 #include "okvm.h"
-#include "okemu.h"
+// #include "okemu.h"
 #include <stdlib.h>
-
-// TODO maybe refactor codebase to just define stack data structure in here?
-// or maybe even as macros rather than separate functions?
-
-// pop 1-4 bytes as a 32-bit int
-static unsigned int stack_popn(OkStack* stack, unsigned char n) {
-  unsigned int out = 0;
-  for (size_t i = 0; i < n; i++) {
-    out = (out << 8) | stack_pop(stack);
-  }
-  
-  return out;
-}
-
-static void stack_pushn(OkStack* stack, unsigned char n, unsigned int val) {
-  for (int i = 0; i < n; i++) {
-    unsigned char byte = (unsigned char) ((val >> (8 * i)) & 0xFF);
-    stack_push(stack, byte);
-  }
-}
 
 void vm_init(OkVM* self, unsigned char* program) { // NOTE: allocates memory!
   self->dst = stack_init();
@@ -55,15 +35,15 @@ static void trigger_device(OkVM* vm, size_t port) {
   }
 
   // if emulating fails, set status to panic
-  if (!emulate_device(port + VM_WORD_SIZE, buffer_size)) {
-    vm->status = VM_PANIC; 
-  } // TODO rework this prob
+  // if (!emulate_device(port + VM_WORD_SIZE, buffer_size)) {
+  //   vm->status = VM_PANIC; 
+  // } // TODO rework this prob
 }
 
 static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize) {
 
   unsigned int a, b;
-  if (opcode >= 0 && opcode <= 5) {
+  if (opcode <= 5) {
     b = stack_popn(&(vm->dst), argsize + 1); // add 1 because it's 0-3
     a = stack_popn(&(vm->dst), argsize + 1);
   }
@@ -107,7 +87,6 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       break;
     case 6: // str
       addr = (size_t) stack_popn(&(vm->dst), VM_WORD_SIZE);
-      unsigned int data = stack_popn(&(vm->dst), argsize + 1);
       for (size_t i = 0; i < argsize + 1; i++) {
         vm->ram[addr + i] = stack_pop(&(vm->dst)); 
       }
