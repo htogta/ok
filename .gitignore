@@ -1,2 +1,5 @@
 # ignore all test binaries
 tests/*
+
+# BUT keep the tests dir
+!tests/.gitkeep
