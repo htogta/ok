@@ -3,6 +3,22 @@
 This repository contains the specification and reference implementation for the 
 `ok` (virtual) computer.
 
+*WARNING*: this virtual computer and its specification are still in beta; 
+expect limited documentation and potential non-backwards-compatible updates in 
+the future.
+
+## Install
+
+If you have [just](https://github.com/casey/just) installed, simply clone this 
+repository, navigate to the repository folder, and run `just build`. The 
+executable `okmin` will be in the `build` folder.
+
+Otherwise, compile it yourself with:
+
+```sh
+cc src/okmin.c src/okvm.c src/okstack.c -o build/okmin
+```
+
 ## Roadmap
 
 - [x] 256-byte circular stack implementation
@@ -13,11 +29,14 @@ This repository contains the specification and reference implementation for the
 - [x] Basic CLI stuff (reading ROM from file, `okmin`, etc)
 - [ ] Our first assembler! (IN PROGRESS)
 - [ ] Testing assembled ROM files (IN PROGERSS)
-- [ ] Emulator output device specification
+- [ ] Flesh-out emulator output device specification (i.e. improve `syn`)
+- [ ] Compilation flags for different device word sizes
+- [ ] SDL backend for graphical emulator
+
 
 Note: the assembler currently in development is not a "standard" for how the 
 `ok` computer's assembly language is supposed to look- feel free to experiment
-with creating your own assembly-style languages for this VM.
+with creating your own assembly languages for this VM.
 
 ## Goals
 

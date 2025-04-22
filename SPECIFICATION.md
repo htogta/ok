@@ -1,4 +1,4 @@
-# Specification
+# Specification (version 0.1.0)
 
 ## Bytecode
 
@@ -39,8 +39,9 @@ arg(1-4) => takes 1-4 bytes
 - `lit` ( -- val* ) push immediate bytes
 - `syn` ( portW -- ) synchronize IO buffers for device pointer (port) at an address
 
-If the argument passed to `syn` is not found in the first 16 words of RAM (device port table),
-then the machine panics.
+`syn` uses magic numbers- for the minimal VM implementation `okmin`, to write a 
+byte to `stdout`, store that byte at RAM address `0xBABE` and call `syn` on that
+address. To write it to `stderr` instead, use address `0xBEEF`.
 
 This instruction, rather than using `aa` to determine argument size, uses `aa` to determine which arg to push onto stack:
 
