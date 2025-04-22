@@ -7,7 +7,8 @@
 #define VM_WORD_SIZE (3)
 
 // some magic numbers:
-#define PORT_OUT (0xbabe)
+#define PORT_STDOUT (0xbabe)
+#define PORT_STDERR (0xbeef)
 
 typedef enum {
   VM_RUNNING,

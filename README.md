@@ -9,8 +9,9 @@ This repository contains the specification and reference implementation for the
 - [x] circular stack unit tests
 - [x] Basic VM instruction execution
 - [x] Basic VM unit tests
-- [x] Minimal output device handling (`stdout`)
-- [ ] Our first assembler! (IN PROGRESS)
+- [x] Minimal output device handling (`stdout` and `stderr`)
+- [ ] CLI stuff (reading ROM from file, `okmin`, etc- IN PROGRESS)
+- [ ] Our first assembler!
 - [ ] Emulator output device handling
 
 Note: the assembler currently in development is not a "standard" for how the 

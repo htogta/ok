@@ -5,7 +5,7 @@
 // stdlib for calloc, string for memcpy
 
 #include <stdio.h>
-// TODO remove later, just here for putchar and IO debug pre-EMU
+// TODO remove later, just here for fputc for okmin
 
 
 void vm_init(OkVM* self, unsigned char* program, size_t rom_size) { // NOTE: allocates memory!
@@ -45,9 +45,16 @@ static void trigger_device(OkVM* vm, size_t port) {
   // 0x00babe to stdout, so writing there and calling "sync"
   // will print that out.
 
-  if (port == PORT_OUT) {
-    char c = vm->ram[port];
-    putchar(c); // TODO ignore if null/empty?
+  // write one byte to stdout
+  if (port == PORT_STDOUT) {
+    fputc(vm->ram[port], stdout);
+    return;
+  }
+
+  // write one byte to stderr
+  if (port == PORT_STDERR) {
+    fputc(vm->ram[port], stderr);
+    return;
   }
 
   // TODO should this return a status code? or is that a waste
