@@ -2,20 +2,17 @@
 #include <stdio.h>
 #include <assert.h>
 
-// defining some opcodes for debug purposes
-#define LIT2 (0b10011101)
-#define ASB2 (0b10010000)
-#define JMP2 (0b10011100)
 
 void test_multibyte();
-// void test_jmp(); TODO
+void test_jmp();
 // void test_syn(); TODO
 // void test_skip(); TODO
 
 int main() {
   printf("Testing vm...\n");
   
-  test_multibyte();  
+  test_multibyte();
+  test_jmp();
 
   printf("Done.\n");
   
@@ -23,6 +20,11 @@ int main() {
 }
 
 // TESTS BELOW:
+
+// defining some opcodes for test_multibyte
+#define LIT2 (0b10011101)
+#define JMP2 (0b10011100)
+#define ASB2 (0b10010000)
 
 // testing asb for multi-byte ints
 void test_multibyte() {
@@ -38,13 +40,13 @@ void test_multibyte() {
   };
 
   OkVM vm;
-  vm_init(&vm, program);
+  vm_init(&vm, program, 8);
 
   vm.status = VM_RUNNING;
   while (vm.status == VM_RUNNING) {
     vm_tick(&vm);
   }
-
+  
   // 5312 should now be on the stack top:
   assert(stack_popn(&(vm.dst), 2) == 5312);
   //printf("Stack top: %d\n", stack_popn(&(vm.dst), 2));
@@ -56,4 +58,30 @@ void test_multibyte() {
   vm_free(&vm);
 
   printf("...test_multibyte PASSED\n");
+}
+
+#define LIT1 (0b10001101)
+#define JMP (0b10001100)
+
+void test_jmp() {
+  unsigned char program[4] = {
+    LIT1,
+    0x55, // 85 in decimal
+    JMP,
+    0
+  };
+
+  OkVM vm;
+  vm_init(&vm, program, 4);
+
+  vm.status = VM_RUNNING;
+  while (vm.status == VM_RUNNING) {
+    vm_tick(&vm);
+  }
+  
+  assert(vm.pc == 0x56); // should halt one after 
+
+  vm_free(&vm);
+  
+  printf("...test_jmp PASSED\n");
 }
