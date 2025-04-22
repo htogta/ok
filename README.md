@@ -72,3 +72,8 @@ mapped to values of RAM. This is because the base virtual machine specification
 is the only "canonical" part of the `ok` computing stack- creating your own 
 unique assemblers, compilers, emulators, and specific device specifications is 
 encouraged.
+
+See also:
+
+- This repository on [Codeberg](https://codeberg.org/hitogata/ok)
+- This repository on [GitHub](https://github.com/goneal26/ok)
