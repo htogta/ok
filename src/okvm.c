@@ -99,7 +99,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       break;
     case 6: // str
       addr = (size_t) stack_popn(&(vm->dst), VM_WORD_SIZE);
-      for (int i = 0; i < argsize + 1; i++) {
+      for (int i = argsize; i >= 0; i--) {
         vm->ram[addr + i] = stack_pop(&(vm->dst)); 
       }
       break;

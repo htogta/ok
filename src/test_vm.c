@@ -7,8 +7,8 @@ void test_jmp();
 void test_skip();
 void test_skip_lit();
 void test_dbg();
-// void test_lod(); all TODO
-// void test_str(); 
+void test_lod();
+void test_str(); 
 
 int main() {
   printf("Testing vm...\n");
@@ -18,6 +18,8 @@ int main() {
   test_skip();
   test_skip_lit();
   test_dbg();
+  test_lod();
+  test_str();
 
   printf("Done.\n");
   
@@ -207,3 +209,68 @@ void test_dbg() {
 
   printf("...test_dbg PASSED\n");
 }
+
+#define STR2 (0b10010110)
+#define LOD2 (0b10010111)
+#define LIT3 (0b10101101)
+
+void test_lod() {
+  unsigned char program[6] = {
+    LIT3,
+    0xe7,
+    0x03,
+    0,
+    LOD2,
+    0
+  };
+
+  OkVM vm;
+  vm_init(&vm, program, 6);
+
+  // pre-set RAM[999] to 0xdead
+  vm.ram[0x03e7] = 0xad; // note 0x03e7 is 999 in hex 
+  vm.ram[1000] = 0xde;
+
+  vm.status = VM_RUNNING;
+  while (vm.status == VM_RUNNING) {
+    vm_tick(&vm);
+  }
+
+  unsigned int top = stack_popn(&(vm.dst), 2);
+  assert(top == 0xdead);
+
+  vm_free(&vm);
+
+  printf("...test_lod PASSED\n");
+}
+
+void test_str() {
+  unsigned char program[9] = {
+    LIT2,
+    0xcd,
+    0xab,
+    LIT3,
+    69,
+    0,
+    0,
+    STR2, // store 0xabcd at RAM[69]
+    0
+  };
+
+  OkVM vm;
+  vm_init(&vm, program, 9);
+
+  vm.status = VM_RUNNING;
+  while (vm.status == VM_RUNNING) {
+    vm_tick(&vm);
+  }
+
+  // printf("RAM[69] = 0x%02x\n", vm.ram[69]);
+  assert(vm.ram[69] == 0xcd);
+  assert(vm.ram[70] == 0xab); // NOTE little-endian in RAM ofc
+
+  vm_free(&vm);
+
+  printf("...test_str PASSED\n");
+}
+
