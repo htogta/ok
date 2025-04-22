@@ -8,9 +8,14 @@ This repository contains the specification and reference implementation for the
 - [x] 256-byte circular stack implementation
 - [x] circular stack unit tests
 - [x] Basic VM instruction execution
-- [ ] Basic VM unit tests (IN PROGRESS)
-- [ ] Output device handling (`syn` opcode)
-- [ ] `syn` opcode testing
+- [x] Basic VM unit tests
+- [x] Minimal output device handling (`stdout`)
+- [ ] Our first assembler! (IN PROGRESS)
+- [ ] Emulator output device handling
+
+Note: the assembler currently in development is not a "standard" for how the 
+`ok` computer's assembly language is supposed to look- feel free to experiment
+with creating your own assembly-style languages for this VM.
 
 ## Goals
 
