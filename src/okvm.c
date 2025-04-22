@@ -101,6 +101,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       n = stack_popn(&(vm->dst), argsize + 1);
       stack_pushn(&(vm->dst), argsize + 1, n);
       stack_pushn(&(vm->dst), argsize + 1, n);
+      break;
     case 9: // drp (pop from stack)
       stack_popn(&(vm->dst), argsize + 1);
       break;
@@ -119,6 +120,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       for (size_t i = 0; i < argsize + 1; i++) {
         stack_push(&(vm->dst), fetch(vm));
       }
+      break;
     case 14: // syn (this guy's complicated)
       // pop an address
       addr = (size_t) stack_popn(&(vm->dst), VM_WORD_SIZE);
