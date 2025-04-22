@@ -1,29 +1,33 @@
 #include <stdio.h>
 #include "okstack.h"
+#include <assert.h>
 
 int main() {
-  printf("Testing stack...\n");
+  printf("Testing stack... ");
 
   OkStack s = stack_init();
 
-  printf("current sp (should be 0): %d\n", s.sp);
+  assert(s.sp == 0);
 
-  printf("pushing 2, 3, 4...\n");
-  
+  // pushing 2, 3, 4...
   stack_push(&s, 2);
   stack_push(&s, 3);
   stack_push(&s, 4);
-  
-  printf("current sp (should be 3): %d\n", s.sp);
 
-  printf("should pop 4: %d\n", stack_pop(&s));
-  printf("should pop 3: %d\n", stack_pop(&s));
-  printf("should pop 2: %d\n", stack_pop(&s));
+  assert(s.sp == 3);
 
-  printf("current sp (should be 0): %d\n", s.sp);
+  // now for popping:
+  assert(4 == stack_pop(&s));
+  assert(3 == stack_pop(&s));
+  assert(2 == stack_pop(&s));
 
-  printf("should pop 0: %d\n", stack_pop(&s));
-  printf("current sp (should be 255): %d\n", s.sp);
+  assert(s.sp == 0);
+
+  // check underflow
+  assert(stack_pop(&s) == 0);
+  assert(s.sp == 255);
+
+  printf("done.\n");
   
   return 0;
 }
