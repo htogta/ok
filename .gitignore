@@ -1,5 +1,7 @@
-# ignore all test binaries
+# ignore all test binaries BUT keep the tests dir
 tests/*
-
-# BUT keep the tests dir
 !tests/.gitkeep
+
+# same for build
+build/*
+!build/.gitkeep
