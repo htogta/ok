@@ -178,7 +178,7 @@ static void execute(OkVM* vm, unsigned char instr) {
   // handling "b" -> the skip flag
   if ((instr & 0b01000000) != 0) {
     unsigned char top = stack_pop(&(vm->dst));
-    if (top != 0b11111111) {
+    if (top == 0) { // if 0, skip
       if (opcode == 0b1101) { // if lit opcode, skip immediate byte args too
         for (int i = 0; i < argsize + 1; i++) { fetch(vm); }
       }

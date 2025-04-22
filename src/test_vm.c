@@ -104,8 +104,8 @@ void test_skip() {
     LIT1,
     0x03, // stack is [9, 3] <- top
     LIT1,
-    33, // stack is now [9, 3, 33]
-    ASB1_SKIP, // pop 33, since 33 != 255, skip ASB1
+    0, // stack is now [9, 3, 0]
+    ASB1_SKIP, // pop, since 0, skip ASB1
     MXR1, // run MXR instead, stack is now [3^9, 3*9]
     DRP1, // drop 3*9, top should be 3^9
     0
@@ -137,7 +137,7 @@ void test_skip_lit() {
     LIT1, // push 69
     69,
     LIT1, // push 2 
-    2,
+    0,
     LIT2_SKIP, // all this gets skipped, straight to halt
     0xcd,
     0xab,

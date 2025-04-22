@@ -11,7 +11,7 @@ instruction, stopping the machine. This way, uninitialized values in ROM
 (zeroes, by default) will halt execution.
 
 If bit `b` is 1, pop the top byte on the stack before executing the opcode. If 
-that top byte is not 255 (or -1), skip the current instruction.
+that top byte is zero, skip the current instruction.
 
 `a` is the variable argument byte counter, taking values from 1 to 4.
 
@@ -76,7 +76,7 @@ closest to the top. %% TODO are we sure? %%
 
 Prepend with a `?` to set the `b` flag:
 
-- `?jmp` = conditional jump if top is 255
+- `?jmp` = conditional jump if top is nonzero
 
 Append a number from 1 to 4 for variable args:
 
