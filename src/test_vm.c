@@ -6,7 +6,9 @@ void test_multibyte();
 void test_jmp();
 void test_skip();
 void test_skip_lit();
-// void test_syn(); TODO
+void test_dbg();
+// void test_lod(); all TODO
+// void test_str(); 
 
 int main() {
   printf("Testing vm...\n");
@@ -15,6 +17,7 @@ int main() {
   test_jmp();
   test_skip();
   test_skip_lit();
+  test_dbg();
 
   printf("Done.\n");
   
@@ -155,4 +158,52 @@ void test_skip_lit() {
   vm_free(&vm);
 
   printf("...test_skip_lit PASSED\n");
+}
+
+#define DBG_SP (0b10001111)
+#define DBG_RP (0b10011111)
+#define DBG_PC (0b10101111)
+#define DBG_WORDSIZE (0b10111111)
+#define PSH1 (0b10001010)
+
+void test_dbg() {
+  unsigned char program[8] = {
+    DBG_WORDSIZE, // should push "3"
+    DBG_PC, // should push "1" as a WORD
+    LIT1,
+    69,
+    PSH1, // 69 on top of return stack
+    DBG_RP, // should push "1"
+    DBG_SP, // should push "1 + 1 + (VM_WORD_SIZE)" I think
+    0
+  };
+
+  // so after running, stack should be (descending, so top is top):
+  // 5 (or 2 + VM_WORD_SIZE)
+  // 1
+  // 0x010000
+  // 3
+
+  OkVM vm;
+  vm_init(&vm, program, 8);
+
+  vm.status = VM_RUNNING;
+  while (vm.status == VM_RUNNING) {
+    vm_tick(&vm);
+  }
+
+  unsigned char maybe_sp = stack_pop(&(vm.dst));
+  unsigned char maybe_rp = stack_pop(&(vm.dst));
+  unsigned int maybe_pc = stack_popn(&(vm.dst), VM_WORD_SIZE);
+  unsigned char maybe_wordsize = stack_pop(&(vm.dst));
+  
+  assert(maybe_sp == (2 + VM_WORD_SIZE));
+  assert(maybe_rp == vm.rst.sp);
+  assert(maybe_rp == 1); // 1 should also work, testing just in case
+  assert(((size_t) maybe_pc) == 1);
+  assert(maybe_wordsize = VM_WORD_SIZE);
+  
+  vm_free(&vm);
+
+  printf("...test_dbg PASSED\n");
 }

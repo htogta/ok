@@ -1,5 +1,5 @@
 #include "okvm.h"
-// #include "okemu.h"
+// #include "okemu.h" TODO
 #include <stdlib.h>
 #include <string.h>
 // stdlib for calloc, string for memcpy
@@ -148,8 +148,8 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
           stack_push(&(vm->dst), (unsigned char) vm->rst.sp);
           break;
         case 2:
-          // push program counter
-          stack_pushn(&(vm->dst), VM_WORD_SIZE, (unsigned char) vm->pc);
+          // push (CURRENT) program counter
+          stack_pushn(&(vm->dst), VM_WORD_SIZE, (unsigned char) (vm->pc - 1));
           break;
         case 3:
           // push machine word size in bytes (1-4)
