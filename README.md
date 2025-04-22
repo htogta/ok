@@ -3,6 +3,15 @@
 This repository contains the specification and reference implementation for the 
 `ok` (virtual) computer.
 
+## Roadmap
+
+- [x] 256-byte circular stack implementation
+- [x] circular stack unit tests
+- [x] Basic VM instruction execution
+- [ ] Basic VM unit tests (IN PROGRESS)
+- [ ] Output device handling (`syn` opcode)
+- [ ] `syn` opcode testing
+
 ## Goals
 
 `ok` is a simple stack-based virtual machine designed with the following goals 
