@@ -1,25 +1,37 @@
 #include "okvm.h"
 // #include "okemu.h"
 #include <stdlib.h>
+#include <string.h>
+// stdlib for calloc, string for memcpy
 
-void vm_init(OkVM* self, unsigned char* program) { // NOTE: allocates memory!
+void vm_init(OkVM* self, unsigned char* program, size_t rom_size) { // NOTE: allocates memory!
   self->dst = stack_init();
   self->rst = stack_init();
   self->pc = 0;
   self->status = VM_HALTED;
-  self->rom = program;
 
-  // handle word size
-  self->ram = (unsigned char*) calloc(1 << (VM_WORD_SIZE * 8), sizeof(unsigned char)); 
+  // allocate vm ram (TODO paging? more efficient that way)
+  self->ram = (unsigned char*) calloc(1 << (VM_WORD_SIZE * 8), sizeof(unsigned char));
+
+  // allocate vm rom (TODO see paging note above)
+  self->rom = (unsigned char*) calloc(1 << (VM_WORD_SIZE * 8), sizeof(unsigned char));
+
+  // copy program to rom
+  memcpy(self->rom, program, rom_size);
 }
 
 void vm_free(OkVM* self) {
-  free(self->ram); // only this needs to be freed,
-  // because only this is on the heap
+  free(self->ram);
+  free(self->rom);
 }
 
 static unsigned char fetch(OkVM* vm) {
-  unsigned char instr = vm->rom[vm->pc];
+  unsigned char instr = 0;
+
+  if (vm->pc < (1 << VM_WORD_SIZE * 8)) {
+    instr = vm->rom[vm->pc];
+  }
+  
   vm->pc++;
   return instr;
 }

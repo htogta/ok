@@ -21,7 +21,7 @@ typedef struct {
   OkVM_status status;
 } OkVM;
 
-void vm_init(OkVM* self, unsigned char* program); // NOTE: allocates memory!
+void vm_init(OkVM* self, unsigned char* program, size_t rom_size); // NOTE: allocates memory!
 OkVM_status vm_tick(OkVM* self);
 void vm_free(OkVM* self);
 
