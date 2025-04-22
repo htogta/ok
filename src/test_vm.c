@@ -9,6 +9,7 @@ void test_skip_lit();
 void test_dbg();
 void test_lod();
 void test_str(); 
+void test_syn_stdout();
 
 int main() {
   printf("Testing vm...\n");
@@ -20,6 +21,7 @@ int main() {
   test_dbg();
   test_lod();
   test_str();
+  test_syn_stdout();
 
   printf("Done.\n");
   
@@ -274,3 +276,38 @@ void test_str() {
   printf("...test_str PASSED\n");
 }
 
+#define STR1 (0b10000110)
+#define SYN (0b10001110)
+
+void test_syn_stdout() {
+  printf("Here is an \"at\" symbol: ");
+  
+  unsigned char program[13] = {
+    LIT1,
+    0X40, // @ char
+    LIT3,
+    0xbe,
+    0xba,
+    0x00,
+    STR1, // write to magic number
+    LIT3,
+    0xbe,
+    0xba,
+    0x00,
+    SYN, // flush to output
+    0
+  };
+
+  OkVM vm;
+  vm_init(&vm, program, 13);
+
+  vm.status = VM_RUNNING;
+  while (vm.status == VM_RUNNING) {
+    vm_tick(&vm);
+  }
+
+  vm_free(&vm);
+
+  // no need for assert, just look in the standard output.
+  printf("...test_syn_stdout PASSED\n");
+}

@@ -1,8 +1,12 @@
 #include "okvm.h"
-// #include "okemu.h" TODO
+// #include "okemu.h" TODO this is where proper device stuff goes
 #include <stdlib.h>
 #include <string.h>
 // stdlib for calloc, string for memcpy
+
+#include <stdio.h>
+// TODO remove later, just here for putchar and IO debug pre-EMU
+
 
 void vm_init(OkVM* self, unsigned char* program, size_t rom_size) { // NOTE: allocates memory!
   self->dst = stack_init();
@@ -37,19 +41,17 @@ static unsigned char fetch(OkVM* vm) {
 }
 
 static void trigger_device(OkVM* vm, size_t port) {
-  // here's how the port system works:
-  // the WORD stored at RAM[port] is the SIZE of the device buffer
-  // that value and a pointer to the next addr gets passed to a 
-  // function, like so:
-  size_t buffer_size = 0;
-  for (size_t i = 0; i < VM_WORD_SIZE; i++) {
-    buffer_size = (buffer_size << 8) | vm->ram[port + i];
+  // TODO rework this later, but for now, we map the byte at
+  // 0x00babe to stdout, so writing there and calling "sync"
+  // will print that out.
+
+  if (port == PORT_OUT) {
+    char c = vm->ram[port];
+    putchar(c); // TODO ignore if null/empty?
   }
 
-  // if emulating fails, set status to panic
-  // if (!emulate_device(port + VM_WORD_SIZE, buffer_size)) {
-  //   vm->status = VM_PANIC; 
-  // } // TODO rework this prob
+  // TODO should this return a status code? or is that a waste
+  // of stack space?
 }
 
 static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize) {
@@ -133,7 +135,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
         stack_push(&(vm->dst), fetch(vm));
       }
       break;
-    case 14: // syn (this guy's complicated)
+    case 14: // syn
       // pop an address
       addr = (size_t) stack_popn(&(vm->dst), VM_WORD_SIZE);
       trigger_device(vm, addr); // TODO this function is essentially
