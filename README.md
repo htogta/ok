@@ -10,9 +10,10 @@ This repository contains the specification and reference implementation for the
 - [x] Basic VM instruction execution
 - [x] Basic VM unit tests
 - [x] Minimal output device handling (`stdout` and `stderr`)
-- [ ] CLI stuff (reading ROM from file, `okmin`, etc- IN PROGRESS)
-- [ ] Our first assembler!
-- [ ] Emulator output device handling
+- [x] Basic CLI stuff (reading ROM from file, `okmin`, etc)
+- [ ] Our first assembler! (IN PROGRESS)
+- [ ] Testing assembled ROM files (IN PROGERSS)
+- [ ] Emulator output device specification
 
 Note: the assembler currently in development is not a "standard" for how the 
 `ok` computer's assembly language is supposed to look- feel free to experiment
