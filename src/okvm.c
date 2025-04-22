@@ -168,20 +168,24 @@ static void execute(OkVM* vm, unsigned char instr) {
     vm->status = VM_HALTED;
     return;
   }
+  
+  // decoding "a" -> the argument size flag
+  unsigned char argsize = (instr & 0b00110000) >> 4;
+  
+  // decoding opcodes
+  unsigned char opcode = instr & 0x000f;
 
   // handling "b" -> the skip flag
   if ((instr & 0b01000000) != 0) {
     unsigned char top = stack_pop(&(vm->dst));
     if (top != 0b11111111) {
+      if (opcode == 0b1101) { // if lit opcode, skip immediate byte args too
+        for (int i = 0; i < argsize + 1; i++) { fetch(vm); }
+      }
       return;
     }
   }
 
-  // decoding "a" -> the argument size flag
-  unsigned char argsize = (instr & 0b00110000) >> 4;
-
-  // decoding opcodes
-  unsigned char opcode = instr & 0x000f;
   handle_opcode(vm, opcode, argsize); // split this off for brevity
 }
 
