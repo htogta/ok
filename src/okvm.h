@@ -4,16 +4,16 @@
 #include "okstack.h"
 #include <stddef.h>
 
-#define VM_WORD_SIZE (3)
+#define OKVM_WORD_SIZE (3)
 
 // some magic numbers:
 #define PORT_STDOUT (0xbabe)
 #define PORT_STDERR (0xbeef)
 
 typedef enum {
-  VM_RUNNING,
-  VM_HALTED,
-  VM_PANIC, // fatal error, eg divide by 0
+  OKVM_RUNNING,
+  OKVM_HALTED,
+  OKVM_PANIC, // fatal error, eg divide by 0
 } OkVM_status;
 
 typedef struct {
@@ -25,8 +25,9 @@ typedef struct {
   OkVM_status status;
 } OkVM;
 
-void vm_init(OkVM* self, unsigned char* program, size_t rom_size); // NOTE: allocates memory!
-OkVM_status vm_tick(OkVM* self);
-void vm_free(OkVM* self);
+void okvm_init(OkVM* vm, unsigned char* program, size_t rom_size); // NOTE: allocates memory!
+void okvm_init_from_file(OkVM* vm, char* filepath);
+OkVM_status okvm_tick(OkVM* vm);
+void okvm_free(OkVM* vm);
 
 #endif

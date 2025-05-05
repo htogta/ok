@@ -78,7 +78,7 @@ int run_file(char* filepath) {
   }
   
   // if the file size is too large to fit in vm ROM, exit here.
-  if (read_bytes > (1 << (VM_WORD_SIZE * 8))) {
+  if (read_bytes > (1 << (OKVM_WORD_SIZE * 8))) {
     fprintf(stderr, "ERROR: '%s' too large to fit in VM ROM\n", filepath);
     fclose(fileptr);
     free(program);
@@ -88,29 +88,29 @@ int run_file(char* filepath) {
   // now we're done with the file
   fclose(fileptr);
 
-  // TODO optimize vm_init so that we don't have to read the file into a program 
+  // TODO optimize okvm_init so that we don't have to read the file into a program 
   // buffer before loading it into ROM, and instead just load the file data 
   // directly into ROM?
 
   // now to init the vm
   OkVM vm;
-  vm_init(&vm, program, read_bytes);
+  okvm_init(&vm, program, read_bytes);
 
   // we can free program now if we want, it's been stored in the VM's ROM
   free(program);
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
 
-  if (vm.status == VM_PANIC) {
+  if (vm.status == OKVM_PANIC) {
     fprintf(stderr, "ERROR: VM exited with panic at PC value %zu\n", vm.pc);
-    vm_free(&vm);
+    okvm_free(&vm);
     return 1;
   }
 
-  vm_free(&vm);
+  okvm_free(&vm);
 
   return 0; // success!
 }

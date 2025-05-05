@@ -49,11 +49,11 @@ void test_multibyte() {
   };
 
   OkVM vm;
-  vm_init(&vm, program, 8);
+  okvm_init(&vm, program, 8);
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
   
   // 5312 should now be on the stack top:
@@ -64,7 +64,7 @@ void test_multibyte() {
   assert(stack_popn(&(vm.dst), 2) == 662);
   //printf("Stack top: %d\n", stack_popn(&(vm.dst), 2));
   
-  vm_free(&vm);
+  okvm_free(&vm);
 
   printf("...test_multibyte PASSED\n");
 }
@@ -82,16 +82,16 @@ void test_jmp() {
   };
 
   OkVM vm;
-  vm_init(&vm, program, 4);
+  okvm_init(&vm, program, 4);
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
   
   assert(vm.pc == 0x56); // should halt one after 
 
-  vm_free(&vm);
+  okvm_free(&vm);
   
   printf("...test_jmp PASSED\n");
 }
@@ -116,16 +116,16 @@ void test_skip() {
   };
   
   OkVM vm;
-  vm_init(&vm, program, 10);
+  okvm_init(&vm, program, 10);
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
 
   assert(stack_pop(&(vm.dst)) == (3 ^ 9));
 
-  vm_free(&vm);
+  okvm_free(&vm);
 
   printf("...test_skip PASSED\n");
 }
@@ -149,17 +149,17 @@ void test_skip_lit() {
   };
 
   OkVM vm;
-  vm_init(&vm, program, 8);
+  okvm_init(&vm, program, 8);
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
 
   unsigned char top = stack_pop(&(vm.dst));
   assert(top == 69);
 
-  vm_free(&vm);
+  okvm_free(&vm);
 
   printf("...test_skip_lit PASSED\n");
 }
@@ -178,36 +178,36 @@ void test_dbg() {
     69,
     PSH1, // 69 on top of return stack
     DBG_RP, // should push "1"
-    DBG_SP, // should push "1 + 1 + (VM_WORD_SIZE)" I think
+    DBG_SP, // should push "1 + 1 + (OKVM_WORD_SIZE)" I think
     0
   };
 
   // so after running, stack should be (descending, so top is top):
-  // 5 (or 2 + VM_WORD_SIZE)
+  // 5 (or 2 + OKVM_WORD_SIZE)
   // 1
   // 0x010000
   // 3
 
   OkVM vm;
-  vm_init(&vm, program, 8);
+  okvm_init(&vm, program, 8);
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
 
   unsigned char maybe_sp = stack_pop(&(vm.dst));
   unsigned char maybe_rp = stack_pop(&(vm.dst));
-  unsigned int maybe_pc = stack_popn(&(vm.dst), VM_WORD_SIZE);
+  unsigned int maybe_pc = stack_popn(&(vm.dst), OKVM_WORD_SIZE);
   unsigned char maybe_wordsize = stack_pop(&(vm.dst));
   
-  assert(maybe_sp == (2 + VM_WORD_SIZE));
+  assert(maybe_sp == (2 + OKVM_WORD_SIZE));
   assert(maybe_rp == vm.rst.sp);
   assert(maybe_rp == 1); // 1 should also work, testing just in case
   assert(((size_t) maybe_pc) == 1);
-  assert(maybe_wordsize = VM_WORD_SIZE);
+  assert(maybe_wordsize = OKVM_WORD_SIZE);
   
-  vm_free(&vm);
+  okvm_free(&vm);
 
   printf("...test_dbg PASSED\n");
 }
@@ -227,21 +227,21 @@ void test_lod() {
   };
 
   OkVM vm;
-  vm_init(&vm, program, 6);
+  okvm_init(&vm, program, 6);
 
   // pre-set RAM[999] to 0xdead
   vm.ram[0x03e7] = 0xad; // note 0x03e7 is 999 in hex 
   vm.ram[1000] = 0xde;
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
 
   unsigned int top = stack_popn(&(vm.dst), 2);
   assert(top == 0xdead);
 
-  vm_free(&vm);
+  okvm_free(&vm);
 
   printf("...test_lod PASSED\n");
 }
@@ -260,18 +260,18 @@ void test_str() {
   };
 
   OkVM vm;
-  vm_init(&vm, program, 9);
+  okvm_init(&vm, program, 9);
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
 
   // printf("RAM[69] = 0x%02x\n", vm.ram[69]);
   assert(vm.ram[69] == 0xcd);
   assert(vm.ram[70] == 0xab); // NOTE little-endian in RAM ofc
 
-  vm_free(&vm);
+  okvm_free(&vm);
 
   printf("...test_str PASSED\n");
 }
@@ -299,14 +299,14 @@ void test_syn_stdout() {
   };
 
   OkVM vm;
-  vm_init(&vm, program, 13);
+  okvm_init(&vm, program, 13);
 
-  vm.status = VM_RUNNING;
-  while (vm.status == VM_RUNNING) {
-    vm_tick(&vm);
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
   }
 
-  vm_free(&vm);
+  okvm_free(&vm);
 
   // no need for assert, just look in the standard output.
   printf("...test_syn_stdout PASSED\n");

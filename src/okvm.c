@@ -7,32 +7,45 @@
 #include <stdio.h>
 // TODO remove later, just here for fputc for okmin
 
+// initialize an instance of the VM (ALLOCATES MEMORY !!!)
+void okvm_init(OkVM* vm, unsigned char* program, size_t rom_size) { // NOTE: allocates memory!
+  vm->dst = stack_init();
+  vm->rst = stack_init();
+  vm->pc = 0;
+  vm->status = OKVM_HALTED;
 
-void vm_init(OkVM* self, unsigned char* program, size_t rom_size) { // NOTE: allocates memory!
-  self->dst = stack_init();
-  self->rst = stack_init();
-  self->pc = 0;
-  self->status = VM_HALTED;
+  // allocate vm ram (TODO don't allocate it all at once? It's a lot)
+  vm->ram = (unsigned char*) calloc(1 << (OKVM_WORD_SIZE * 8), sizeof(unsigned char));
 
-  // allocate vm ram (TODO paging? more efficient that way)
-  self->ram = (unsigned char*) calloc(1 << (VM_WORD_SIZE * 8), sizeof(unsigned char));
-
-  // allocate vm rom (TODO see paging note above)
-  self->rom = (unsigned char*) calloc(1 << (VM_WORD_SIZE * 8), sizeof(unsigned char));
+  // allocate vm rom (TODO see note above)
+  vm->rom = (unsigned char*) calloc(1 << (OKVM_WORD_SIZE * 8), sizeof(unsigned char));
 
   // copy program to rom
-  memcpy(self->rom, program, rom_size);
+  memcpy(vm->rom, program, rom_size);
 }
 
-void vm_free(OkVM* self) {
-  free(self->ram);
-  free(self->rom);
+static unsigned char fetch(OkVM* vm);
+static void execute(OkVM* vm, unsigned char instr);
+
+// one clock cycle of the VM
+OkVM_status okvm_tick(OkVM* vm) {
+  // fetch and exec current instr
+  unsigned char instr = fetch(vm);
+  execute(vm, instr);
+  
+  return vm->status;
+}
+
+// free heap memory of the vm
+void okvm_free(OkVM* vm) {
+  free(vm->ram);
+  free(vm->rom);
 }
 
 static unsigned char fetch(OkVM* vm) {
   unsigned char instr = 0;
 
-  if (vm->pc < (1 << VM_WORD_SIZE * 8)) {
+  if (vm->pc < (1 << OKVM_WORD_SIZE * 8)) {
     instr = vm->rom[vm->pc];
   }
   
@@ -82,7 +95,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       if (a == 0) {
         stack_pushn(&(vm->dst), argsize + 1, 0);
         stack_pushn(&(vm->dst), argsize + 1, 0);
-        vm->status = VM_PANIC; // should this panic?
+        vm->status = OKVM_PANIC; // should this panic?
       } else {
         stack_pushn(&(vm->dst), argsize + 1, b % a);
         stack_pushn(&(vm->dst), argsize + 1, b / a);
@@ -107,13 +120,13 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       stack_push(&(vm->dst), (b == a) ? 255 : 0);
       break;
     case 6: // str
-      addr = (size_t) stack_popn(&(vm->dst), VM_WORD_SIZE);
+      addr = (size_t) stack_popn(&(vm->dst), OKVM_WORD_SIZE);
       for (int i = argsize; i >= 0; i--) {
         vm->ram[addr + i] = stack_pop(&(vm->dst)); 
       }
       break;
     case 7: // lod
-      addr = (size_t) stack_popn(&(vm->dst), VM_WORD_SIZE);
+      addr = (size_t) stack_popn(&(vm->dst), OKVM_WORD_SIZE);
       for (int i = 0; i < argsize + 1; i++) {
         stack_push(&(vm->dst), vm->ram[addr + i]);
       }
@@ -144,7 +157,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       break;
     case 14: // syn
       // pop an address
-      addr = (size_t) stack_popn(&(vm->dst), VM_WORD_SIZE);
+      addr = (size_t) stack_popn(&(vm->dst), OKVM_WORD_SIZE);
       trigger_device(vm, addr); // TODO this function is essentially
       // user-implemented, it's an I/O trigger
       break;
@@ -158,11 +171,11 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
           break;
         case 2:
           // push (CURRENT) program counter
-          stack_pushn(&(vm->dst), VM_WORD_SIZE, (unsigned char) (vm->pc - 1));
+          stack_pushn(&(vm->dst), OKVM_WORD_SIZE, (unsigned char) (vm->pc - 1));
           break;
         case 3:
           // push machine word size in bytes (1-4)
-          stack_push(&(vm->dst), VM_WORD_SIZE);
+          stack_push(&(vm->dst), OKVM_WORD_SIZE);
           break;
       }
       break;
@@ -174,7 +187,7 @@ static void execute(OkVM* vm, unsigned char instr) {
 
   // handling 1 at start
   if ((instr & 0b10000000) == 0) {
-    vm->status = VM_HALTED;
+    vm->status = OKVM_HALTED;
     return;
   }
   
@@ -196,13 +209,4 @@ static void execute(OkVM* vm, unsigned char instr) {
   }
 
   handle_opcode(vm, opcode, argsize); // split this off for brevity
-}
-
-OkVM_status vm_tick(OkVM* self) {
-  // fetch and exec current instr
-  unsigned char instr = fetch(self);
-  execute(self, instr);
-  // TODO handle I/O?
-  
-  return self->status;
 }
