@@ -27,9 +27,10 @@ cc src/okmin.c src/okvm.c src/okstack.c -o build/okmin
 - [x] Basic VM unit tests
 - [x] Minimal output device handling (`stdout` and `stderr`)
 - [x] Basic CLI stuff (reading ROM from file, `okmin`, etc)
-- [ ] Our first assembler! (IN PROGRESS)
-- [ ] Testing assembled ROM files (IN PROGERSS)
-- [ ] Flesh-out emulator output device specification (i.e. improve `syn`)
+- [x] Our first assembler! (see [moka](https://codeberg.org/hitogata/moka))
+- [x] Testing assembled ROM files
+- [ ] Flesh-out emulator output device specification (i.e. improve `syn`) (IN PROGRESS)
+- [ ] Single-header implementation (IN PROGRESS)
 - [ ] Compilation flags for different device word sizes
 - [ ] SDL backend for graphical emulator
 
