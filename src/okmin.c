@@ -1,11 +1,10 @@
+#define OKVM_IMPLEMENTATION
 #include "okvm.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 // usage: okmin [-v] file.rom
 void print_usage();
 void print_version();
+unsigned char serial_output(OkVM* vm);
 int run_file(char* filepath);
 
 int main(int argc, char* argv[]) {
@@ -46,71 +45,31 @@ void print_version() {
   printf("OKMin - A minimal OK virtual machine, version 0.1.0 (beta)\n");
 }
 
+unsigned char serial_output(OkVM* vm) {
+  char c = vm->ram[0xbabe];
+  putchar(c);
+  return (unsigned char) c;
+}
+
 // run a VM rom- returns a system exit code for main to return
 int run_file(char* filepath) {
-  // file handling boilerplate
-  FILE* fileptr = fopen(filepath, "rb");
-
-  if (fileptr == NULL) {
-    fprintf(stderr, "ERROR: file not found %s\n", filepath);
-    return 1;
-  }
-  
-  fseek(fileptr, 0, SEEK_END);
-  size_t file_size = ftell(fileptr);
-  rewind(fileptr);
-
-
-  // make a buffer for the file bytes before loading
-  unsigned char* program = malloc(file_size);
-  if (program == NULL) {
-    fprintf(stderr, "ERROR: failed to allocate memory for program\n");
-    fclose(fileptr);
-    return 1;
-  }
-
-  size_t read_bytes = fread(program, sizeof(unsigned char), file_size, fileptr);
-  if (read_bytes < file_size) {
-    fprintf(stderr, "ERROR: failed to read file data\n");
-    fclose(fileptr);
-    free(program);
-    return 1;
-  }
-  
-  // if the file size is too large to fit in vm ROM, exit here.
-  if (read_bytes > (1 << (OKVM_WORD_SIZE * 8))) {
-    fprintf(stderr, "ERROR: '%s' too large to fit in VM ROM\n", filepath);
-    fclose(fileptr);
-    free(program);
-    return 1;
-  }
-
-  // now we're done with the file
-  fclose(fileptr);
-
-  // TODO optimize okvm_init so that we don't have to read the file into a program 
-  // buffer before loading it into ROM, and instead just load the file data 
-  // directly into ROM?
-
-  // now to init the vm
+  // initialize VM struct (RAM and stacks)
   OkVM vm;
-  okvm_init(&vm, program, read_bytes);
+  int init_failed = okvm_init_from_file(&vm, filepath);
+  if (init_failed) return 1;
+  
+  // device registration
+  int reg_failed = okvm_register_device(&vm, 0b11000000, serial_output);
+  if (reg_failed) return 1;
 
-  // we can free program now if we want, it's been stored in the VM's ROM
-  free(program);
-
-  vm.status = OKVM_RUNNING;
+  vm.status = OKVM_RUNNING; // this actually starts the VM
   while (vm.status == OKVM_RUNNING) {
-    okvm_tick(&vm);
+     okvm_tick(&vm); // one clock cycle
   }
 
-  if (vm.status == OKVM_PANIC) {
-    fprintf(stderr, "ERROR: VM exited with panic at PC value %zu\n", vm.pc);
-    okvm_free(&vm);
-    return 1;
-  }
-
+  // okvm_init allocates RAM and ROM on the heap, so don't forget to free it
   okvm_free(&vm);
 
-  return 0; // success!
+  // if you want, you can return from main based on the VM status
+  return vm.status != OKVM_HALTED;
 }

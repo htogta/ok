@@ -1,3 +1,4 @@
+#define OKVM_IMPLEMENTATION
 #include "okvm.h"
 #include <stdio.h>
 #include <assert.h>
@@ -277,37 +278,53 @@ void test_str() {
 }
 
 #define STR1 (0b10000110)
-#define SYN (0b10001110)
+#define SYN1 (0b10001110)
+#define SERIAL_OUT_ID (0b10001000)
+
+// serial output device function:
+unsigned char serial_output(OkVM* vm) {
+  char ch = vm->ram[0x00babe];
+  putchar(ch);
+  return (unsigned char) ch;
+}
 
 void test_syn_stdout() {
-  printf("Here is an \"at\" symbol: ");
+  printf("Here is an \"at\" symbol: <");
   
   unsigned char program[13] = {
     LIT1,
-    0X40, // @ char
+    0x40, // @ char
     LIT3,
     0xbe,
     0xba,
     0x00,
     STR1, // write to magic number
-    LIT3,
-    0xbe,
-    0xba,
-    0x00,
-    SYN, // flush to output
+    LIT1,
+    SERIAL_OUT_ID,
+    SYN1, // flush to output
     0
   };
 
   OkVM vm;
   okvm_init(&vm, program, 13);
 
+  // registering serial device
+  int reg_success = okvm_register_device(&vm, SERIAL_OUT_ID, serial_output);
+  assert(reg_success == 0);
+
   vm.status = OKVM_RUNNING;
   while (vm.status == OKVM_RUNNING) {
     okvm_tick(&vm);
   }
+  
+  assert(vm.status == OKVM_HALTED);
+  
+  unsigned char top = stack_pop(&(vm.dst));
+  // '@' should have been pushed onto the stack
+  assert(top == 0x40);
 
   okvm_free(&vm);
 
   // no need for assert, just look in the standard output.
-  printf("...test_syn_stdout PASSED\n");
+  printf(">\n...test_syn_stdout PASSED\n");
 }
