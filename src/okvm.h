@@ -1,8 +1,20 @@
 #ifndef OKVM_H
 #define OKVM_H
 
-#include "okstack.h"
 #include <stddef.h>
+
+// the okstack stuff
+typedef struct {
+  unsigned char sp;
+  unsigned char data[256];
+} OkStack; 
+
+// stack handling functions (TODO rename to okstack?)
+void stack_push(OkStack* s, unsigned char i);
+unsigned char stack_pop(OkStack* s);
+void stack_pushn(OkStack* s, unsigned char n, unsigned int val);
+unsigned int stack_popn(OkStack* s, unsigned char n);
+OkStack stack_init();
 
 // TODO make this user-definable?
 #define OKVM_WORD_SIZE (3)
@@ -45,6 +57,43 @@ void okvm_free(OkVM* vm);
 #ifdef OKVM_IMPLEMENTATION
 
 // single-header time
+
+// okstack implementation
+
+OkStack stack_init() {
+  return (OkStack){}; // pre-init values to 0s
+}
+
+void stack_push(OkStack* s, unsigned char i) {
+  s->data[s->sp] = i;
+  s->sp++;
+}
+
+unsigned char stack_pop(OkStack* s) {
+  unsigned char out = s->data[s->sp - 1];
+  s->data[s->sp--] = 0;
+  return out;
+}
+
+// pop 1-4 bytes as a 32-bit int
+unsigned int stack_popn(OkStack* s, unsigned char n) {
+  unsigned int out = 0;
+  for (int i = 0; i < n; i++) {
+    out = (out << 8) | stack_pop(s);
+  }
+  
+  return out;
+}
+
+// push 1-4 bytes of a 32-bit int
+void stack_pushn(OkStack* s, unsigned char n, unsigned int val) {
+  for (int i = 0; i < n; i++) {
+    unsigned char byte = (unsigned char) ((val >> (8 * i)) & 0xFF);
+    stack_push(s, byte);
+  }
+}
+
+// vm implementation
 
 #include <stdlib.h>
 #include <string.h>

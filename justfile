@@ -1,17 +1,8 @@
-test-all: test-stack test-vm
+default: build
 
-test-stack:
-  cc src/test_stack.c src/okstack.c -o tests/test_stack
-  ./tests/test_stack
-
-test-vm:
-  cc src/test_vm.c src/okstack.c -o tests/test_vm
+test:
+  cc src/test_vm.c -o tests/test_vm
   ./tests/test_vm
 
-build-min:
-  cc src/okmin.c src/okstack.c -o build/okmin
-
-build: build-min
-
-run: build-min
-  ./build/okmin
+build:
+  cc src/okmin.c -o build/okmin
