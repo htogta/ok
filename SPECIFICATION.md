@@ -37,13 +37,32 @@ arg(1-4) => takes 1-4 bytes
 - `pop` ( -- data* ) pop data from return stack
 - `jmp` ( dest* -- ) jump to dest
 - `lit` ( -- val* ) push immediate bytes
-- `syn` ( portW -- ) synchronize IO buffers for device pointer (port) at an address
+- `syn` ( id* -- stat* ) see below 
 
-`syn` uses magic numbers- for the minimal VM implementation `okmin`, to write a 
-byte to `stdout`, store that byte at RAM address `0xBABE` and call `syn` on that
-address. To write it to `stderr` instead, use address `0xBEEF`.
+`syn` pops multiple bytes off of the stack, interpreting them as unique IDs for
+VM devices. "Devices" are really just C functions that modify the state of the 
+VM itself and return a single-byte status code- that way the VM can easily
+call C functions.
 
-This instruction, rather than using `aa` to determine argument size, uses `aa` to determine which arg to push onto stack:
+For each single-byte device ID, its corresponding "device function" is called,
+and the status byte that gets returned by that function gets pushed onto the
+stack.
+
+Device IDs and device functions are defined by the user- the device ID byte 
+must have the following form:
+
+`1 a a a a a a a`
+
+The `a` bits can refer to whatever you wish. 
+
+> Note: If `syn` pops a device ID that is invalid or it does not recognize, the VM exits with a panic.
+
+> Note: Devices must be unique- you cannot register multiple devices with the same ID.
+
+- `dbg` ( -- debug ) the "debug" instruction pushes debug values to the stack
+
+This instruction, rather than using `aa` to determine argument size, uses `aa` 
+to determine which arg to push onto stack:
 
 0 = stack pointer (one byte)
 
@@ -53,59 +72,4 @@ This instruction, rather than using `aa` to determine argument size, uses `aa` t
 
 3 = machine word size in bytes (one byte)
 
-- `dbg` ( -- debug ) the "debug" instruction pushes one of the above debug values to the stack
-
-%% NOTE: division and mod by 0 returns 0, but sets the
-VM status to "panic" %%
-
-## assembly language features
-
-All assembly instructions are simply the opcode names shown above, except for 
-`lit`. To push a literal, use `#` followed by some number of bytes as 
-case-insensitive hexadecimal numbers:
-
-`#ff` pushes a single byte, 255.
-
-`#00ff` pushes two bytes, but still just the number 255, only with leading 
-zeroes.
-
-The assembly language uses big-endian number literals, so `#00ff` will result in 
-`ff` or 255 being at the top of the stack.
-
-As a result, numbers are stored on the stack with the most-significant-byte 
-closest to the top. %% TODO are we sure? %%
-
-Prepend with a `?` to set the `b` flag:
-
-- `?jmp` = conditional jump if top is nonzero
-
-Append a number from 1 to 4 for variable args:
-
-- `cmp1` compares 2 single byte arguments 
-- `cmp2` compares 2 two-byte arguments, etc.
-
-Appending no number implies a variable-argument size of however many bytes are 
-in a "word", i.e. the size of a pointer into RAM or ROM. 
-
-### FORTH-style compilation mode
-
-Of course, we have compilation mode like FORTH:
-
-`: add asb drp ;` = defines a word "add" which adds the top 2 bytes.
-`: sub asb swp drp ;` = defines a word "sub" which subtracts the top 2 bytes.
-
-### Labels
-
-You can declare a label with `(labelname)`
-
-To push that label's index in ROM onto the stack (as a word), do `.labelname`
-
-Labels declared in compilation mode can act as "relative" labels:
-
-`: test (lbl) .lbl pop1 ?jmp ;`
-
-However, when a label is declared in compilation mode, that label can only
-be referenced in the same instance of compilation mode. So, the following does
-not work:
-
-`: labelhere (lbl) add ; .lbl`
+> Note: division or modulo by 0 returns 0, and sets the VM to panic.
