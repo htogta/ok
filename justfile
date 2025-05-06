@@ -1,8 +1,8 @@
-default: build
+default: build-example
 
 test:
-  cc src/test_vm.c -o tests/test_vm
-  ./tests/test_vm
+  cc tests/test-vm.c -o tests/test-vm
+  ./tests/test-vm
 
-build:
-  cc src/okmin.c -o build/okmin
+build-example:
+  cc examples/okmin.c -o examples/okmin

@@ -1,7 +1,7 @@
 # ignore all test binaries BUT keep the tests dir
 tests/*
-!tests/.gitkeep
+!tests/test-vm.c
 
-# same for build
+# same for examples
 build/*
-!build/.gitkeep
+!build/okmin.c

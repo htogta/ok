@@ -42,7 +42,7 @@ void print_usage() {
 }
 
 void print_version() {
-  printf("OKMin - A minimal OK virtual machine, version 0.1.0 (beta)\n");
+  printf("OKMin - A minimal OK virtual machine, version %s\n", OKVM_VERSION);
 }
 
 unsigned char serial_output(OkVM* vm) {

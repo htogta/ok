@@ -21,6 +21,8 @@ OkStack stack_init();
 
 #define OKVM_MAX_DEVICES (16)
 
+#define OKVM_VERSION ("0.1.0")
+
 typedef enum {
   OKVM_RUNNING,
   OKVM_HALTED,

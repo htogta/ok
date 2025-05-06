@@ -1,5 +1,5 @@
 #define OKVM_IMPLEMENTATION
-#include "okvm.h"
+#include "../okvm.h"
 #include <stdio.h>
 #include <assert.h>
 
