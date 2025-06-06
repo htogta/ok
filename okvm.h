@@ -66,19 +66,19 @@ OkStack stack_init() {
   return (OkStack){}; // pre-init values to 0s
 }
 
-void stack_push(OkStack* s, unsigned char i) {
+inline void stack_push(OkStack* s, unsigned char i) {
   s->data[s->sp] = i;
   s->sp++;
 }
 
-unsigned char stack_pop(OkStack* s) {
+inline unsigned char stack_pop(OkStack* s) {
   unsigned char out = s->data[s->sp - 1];
   s->data[s->sp--] = 0;
   return out;
 }
 
 // pop 1-4 bytes as a 32-bit int
-unsigned int stack_popn(OkStack* s, unsigned char n) {
+inline unsigned int stack_popn(OkStack* s, unsigned char n) {
   unsigned int out = 0;
   for (int i = 0; i < n; i++) {
     out = (out << 8) | stack_pop(s);
@@ -88,7 +88,7 @@ unsigned int stack_popn(OkStack* s, unsigned char n) {
 }
 
 // push 1-4 bytes of a 32-bit int
-void stack_pushn(OkStack* s, unsigned char n, unsigned int val) {
+inline void stack_pushn(OkStack* s, unsigned char n, unsigned int val) {
   for (int i = 0; i < n; i++) {
     unsigned char byte = (unsigned char) ((val >> (8 * i)) & 0xFF);
     stack_push(s, byte);
@@ -192,7 +192,6 @@ int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn) (OkVM*)
   if (duplicate_id) return 1;
 
   // now register it!
-  // TODO ensure device_ids[] is filled with 0s at VM initialization
   vm->device_ids[vm->num_devices] = id;
   vm->device_fns[vm->num_devices] = fn;
   vm->num_devices++;
@@ -200,14 +199,14 @@ int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn) (OkVM*)
   return 0; // return 0 upon success
 }
 
-static unsigned char fetch(OkVM* vm);
+// defining fetch as a macro, it's faster
+#define FETCH(vm) ((vm)->rom[(vm)->pc++])
 static void execute(OkVM* vm, unsigned char instr);
 
 // one clock cycle of the VM
 OkVM_status okvm_tick(OkVM* vm) {
   // fetch and exec current instr
-  unsigned char instr = fetch(vm);
-  execute(vm, instr);
+  execute(vm, FETCH(vm));
   
   return vm->status;
 }
@@ -218,16 +217,6 @@ void okvm_free(OkVM* vm) {
   free(vm->rom);
 }
 
-static unsigned char fetch(OkVM* vm) {
-  unsigned char instr = 0;
-
-  if (vm->pc < (1 << OKVM_WORD_SIZE * 8)) {
-    instr = vm->rom[vm->pc];
-  }
-  
-  vm->pc++;
-  return instr;
-}
 
 static void trigger_device(OkVM* vm, unsigned char id) {
   // check if ID is in device_ids
@@ -331,7 +320,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
       break;
     case 13: // lit
       for (int i = 0; i < argsize + 1; i++) {
-        stack_push(&(vm->dst), fetch(vm));
+        stack_push(&(vm->dst), FETCH(vm));
       }
       break;
     case 14: // syn
@@ -380,7 +369,7 @@ static void execute(OkVM* vm, unsigned char instr) {
     unsigned char top = stack_pop(&(vm->dst));
     if (top == 0) { // if 0, skip
       if (opcode == 0b1101) { // if lit opcode, skip immediate byte args too
-        for (int i = 0; i < argsize + 1; i++) { fetch(vm); }
+        for (int i = 0; i < argsize + 1; i++) { FETCH(vm); }
       }
       return;
     }
