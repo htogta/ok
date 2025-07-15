@@ -28,7 +28,7 @@ arg(1-4) => takes 1-4 bytes
 - `aor` ( a* b* -- b|a* b&a* ) bitwise and & bitwise or
 - `mxr` ( a* b* -- b^a* bxa* ) multiply and xor
 - `swp` ( a* b* -- b* a* ) swap top 2 values
-- `cmp` ( a* b* -- gl1 eq1) eq1 = 255 if a and b are equal, otherwise 0. If eq1 is 0, gl1 will be 255 if b>a, otherwise 0.
+- `cmp` ( a* b* -- gl1 eq1 ) eq1 = 255 if a and b are equal, otherwise 0. If eq1 is 0, gl1 will be 255 if b>a, otherwise 0.
 - `str` ( data* addrW -- ) store data at RAM[addr]
 - `lod` ( addrW -- data* ) fetch data at RAM[addr]
 - `dup` ( n* -- n* n* ) duplicate top value
