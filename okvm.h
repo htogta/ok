@@ -36,9 +36,8 @@ typedef struct OkVM {
   OkStack dst; // data stack
   OkStack rst; // return stack
   size_t pc; // program counter
-  size_t num_devices; // track number of registered devices (TODO does this need to be size_t?)
-  unsigned char device_ids[OKVM_MAX_DEVICES]; // device unique ids 
-  unsigned char (*device_fns[OKVM_MAX_DEVICES]) (struct OkVM*); // device function pointers
+  size_t num_devices; // track number of registered devices (FIXME does this need to be size_t?)
+  unsigned char (*devices[16])(struct OkVM*); // array of function pointers for devices
   unsigned char* ram;
   unsigned char* rom;
   OkVM_status status;
@@ -113,9 +112,9 @@ int okvm_init(OkVM* vm, unsigned char* program, size_t rom_size) { // NOTE: allo
   vm->num_devices = 0;
   vm->status = OKVM_HALTED;
 
-  // ensure device_ids filled with 0s
+  // ensure devices array filled with nulls
   for (int i = 0; i < OKVM_MAX_DEVICES; i++) {
-    vm->device_ids[i] = 0;
+    vm->devices[i] = NULL;
   }
 
   // allocate vm ram (TODO don't allocate it all at once? It's a lot)
@@ -163,9 +162,9 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   vm->num_devices = 0;
   vm->status = OKVM_HALTED;
 
-  // ensure device_ids filled with 0s
+  // ensure devices array filled with nulls
   for (int i = 0; i < OKVM_MAX_DEVICES; i++) {
-    vm->device_ids[i] = 0;
+    vm->devices[i] = NULL;
   }
 
   // allocate vm ram (TODO don't allocate it all at once? It's a lot)
@@ -181,19 +180,8 @@ int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn) (OkVM*)
   // ensure that we have registered less than 16 devices
   if (vm->num_devices >= OKVM_MAX_DEVICES) return 1;
 
-  // check if id is valid
-  if ((id & 0b10000000) == 0) return 1;
-
-  // check if id is already registered (TODO special error code?)
-  int duplicate_id = 0;
-  for (int i = 0; i < OKVM_MAX_DEVICES; i++) {
-    if (vm->device_ids[i] == id) { duplicate_id = 1; break; }
-  }
-  if (duplicate_id) return 1;
-
   // now register it!
-  vm->device_ids[vm->num_devices] = id;
-  vm->device_fns[vm->num_devices] = fn;
+  vm->devices[vm->num_devices] = fn;
   vm->num_devices++;
   
   return 0; // return 0 upon success
@@ -217,75 +205,72 @@ void okvm_free(OkVM* vm) {
   free(vm->rom);
 }
 
-
+// triggering a device with a byte id:
+//   - high nibble is the device index (0-15)
+//   - low nibble is the operation
 static void trigger_device(OkVM* vm, unsigned char id) {
-  // check if ID is in device_ids
-  int device_index = -1;
-  for (int i = 0; i < OKVM_MAX_DEVICES; i++) {
-    if (vm->device_ids[i] == id) {
-      device_index = i;
-      break;
-    }
-  }
+  unsigned char index = (id & 0xf0) >> 4;
+  unsigned char op = (id & 0x0f);
 
-  // if still -1 (i.e. not found) panic and return
-  if (device_index == -1) {
+  if (vm->devices[index] == NULL) {
     vm->status = OKVM_PANIC;
     return;
+  } else {
+    unsigned char (*fn)(OkVM*) = vm->devices[index];
+    unsigned char result = fn(vm);
+    
+    // push the result onto the stack
+    stack_push(&(vm->dst), result);
   }
-  
-  // if we're here it's been found; grab its corresponding function and call it
-  unsigned char (*fn)(OkVM*) = vm->device_fns[device_index];
-  unsigned char result = fn(vm);
-
-  // push the result onto the stack
-  stack_push(&(vm->dst), result);
 }
 
 static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize) {
-
-  unsigned int a, b;
-  if (opcode <= 5) {
-    b = stack_popn(&(vm->dst), argsize + 1); // add 1 because it's 0-3
-    a = stack_popn(&(vm->dst), argsize + 1);
-  }
   
   // pre-declaring these
-  size_t addr = 0;
-  unsigned int n = 0;
+  unsigned int a, b;
+  size_t addr;
+  unsigned int n;
+  unsigned char byte;
 
   switch (opcode) {
-    case 0: // asb
-      stack_pushn(&(vm->dst), argsize + 1, b - a);
+    case 0: // add
+      b = stack_popn(&(vm->dst), argsize + 1);
+      a = stack_popn(&(vm->dst), argsize + 1);
       stack_pushn(&(vm->dst), argsize + 1, b + a);
       break;
-    case 1: // dmd
-      if (a == 0) {
-        stack_pushn(&(vm->dst), argsize + 1, 0);
-        stack_pushn(&(vm->dst), argsize + 1, 0);
-        vm->status = OKVM_PANIC; // should this panic?
-      } else {
-        stack_pushn(&(vm->dst), argsize + 1, b % a);
-        stack_pushn(&(vm->dst), argsize + 1, b / a);
-      }
+    case 1: // and
+      b = stack_popn(&(vm->dst), argsize + 1);
+      a = stack_popn(&(vm->dst), argsize + 1);
+      stack_pushn(&(vm->dst), argsize + 1, b & a);
       break;
-    case 2: // aor
-      stack_pushn(&(vm->dst), argsize + 1, b - a);
-      stack_pushn(&(vm->dst), argsize + 1, b + a);
-      break;
-    case 3: // mxr
+    case 2: // xor
+      b = stack_popn(&(vm->dst), argsize + 1);
+      a = stack_popn(&(vm->dst), argsize + 1);
       stack_pushn(&(vm->dst), argsize + 1, b ^ a);
-      stack_pushn(&(vm->dst), argsize + 1, b * a);
+      break;
+    case 3: // shf
+      byte = stack_pop(&(vm->dst));
+      n = stack_popn(&(vm->dst), argsize + 1);
+      n = (n >> (byte & 0x00ff)) << ((byte & 0xff00) >> 4); // eeyikes
+      stack_pushn(&(vm->dst), argsize + 1, n);
       break;
     case 4: // swp
+      b = stack_popn(&(vm->dst), argsize + 1);
+      a = stack_popn(&(vm->dst), argsize + 1);
       // i.e. push b, then push a
       stack_pushn(&(vm->dst), argsize + 1, b);
       stack_pushn(&(vm->dst), argsize + 1, a);
       break;
     case 5: // cmp
-      // push gl, then push eq 
-      stack_push(&(vm->dst), (b > a) ? 255 : 0);
-      stack_push(&(vm->dst), (b == a) ? 255 : 0);
+      b = stack_popn(&(vm->dst), argsize + 1);
+      a = stack_popn(&(vm->dst), argsize + 1);
+      if (b > a) {
+        stack_push(&(vm->dst), 1);
+      } else if (b < a) {
+        stack_push(&(vm->dst), 255);
+      } else {
+        stack_push(&(vm->dst), 0);
+      }
       break;
     case 6: // str
       addr = (size_t) stack_popn(&(vm->dst), OKVM_WORD_SIZE);
@@ -323,26 +308,27 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
         stack_push(&(vm->dst), FETCH(vm));
       }
       break;
-    case 14: // syn
+    case 14: // int
       for (int i = 0; i < argsize + 1; i++) {
         trigger_device(vm, stack_pop(&(vm->dst)));
       }
       break;
-    case 15: // dbg
+    case 15: // sys
       switch (argsize) {
-        case 0: // push stack pointer
-          stack_push(&(vm->dst), (unsigned char) vm->dst.sp);
+        case 0: // push word size in bytes
+          stack_push(&(vm->dst), OKVM_WORD_SIZE);
           break;
-        case 1: // push return pointer
-          stack_push(&(vm->dst), (unsigned char) vm->rst.sp);
+        case 1: // push number of registered devices
+          stack_push(&(vm->dst), (unsigned char) vm->num_devices);
           break;
         case 2:
-          // push (CURRENT) program counter
-          stack_pushn(&(vm->dst), OKVM_WORD_SIZE, (unsigned char) (vm->pc - 1));
+          // push stack and return pointers
+          stack_push(&(vm->dst), (unsigned char) vm->dst.sp);
+          stack_push(&(vm->dst), (unsigned char) vm->rst.sp);
           break;
         case 3:
-          // push machine word size in bytes (1-4)
-          stack_push(&(vm->dst), OKVM_WORD_SIZE);
+          // push current pc
+          stack_pushn(&(vm->dst), OKVM_WORD_SIZE, vm->pc - 1);
           break;
       }
       break;

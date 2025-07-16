@@ -34,7 +34,7 @@ int main() {
 // defining some opcodes for test_multibyte
 #define LIT2 (0b10011101)
 #define JMP2 (0b10011100)
-#define ASB2 (0b10010000)
+#define ADD2 (0b10010000)
 
 // testing asb for multi-byte ints
 void test_multibyte() {
@@ -45,7 +45,7 @@ void test_multibyte() {
     LIT2, // lit2
     0xab, 
     0x0b, // 0bab or 2987  
-    ASB2, // asb
+    ADD2, // add2
     0 // halt
   };
 
@@ -59,10 +59,6 @@ void test_multibyte() {
   
   // 5312 should now be on the stack top:
   assert(stack_popn(&(vm.dst), 2) == 5312);
-  //printf("Stack top: %d\n", stack_popn(&(vm.dst), 2));
-
-  // and then 662 should be on the stack top:
-  assert(stack_popn(&(vm.dst), 2) == 662);
   //printf("Stack top: %d\n", stack_popn(&(vm.dst), 2));
   
   okvm_free(&vm);
@@ -98,9 +94,8 @@ void test_jmp() {
 }
 
 // new instructions for test_skip
-#define ASB1_SKIP (0b11000000)
-#define MXR1 (0b10000011)
-#define DRP1 (0b10001001)
+#define ADD1_SKIP (0b11000000)
+#define AND1 (0b10000001)
 
 void test_skip() {
   unsigned char program[10] = {
@@ -110,9 +105,8 @@ void test_skip() {
     0x03, // stack is [9, 3] <- top
     LIT1,
     0, // stack is now [9, 3, 0]
-    ASB1_SKIP, // pop, since 0, skip ASB1
-    MXR1, // run MXR instead, stack is now [3^9, 3*9]
-    DRP1, // drop 3*9, top should be 3^9
+    ADD1_SKIP, // pop, since 0, skip add1
+    AND1, // run AND1 instead, stack is now [3&9]
     0
   };
   
@@ -124,7 +118,7 @@ void test_skip() {
     okvm_tick(&vm);
   }
 
-  assert(stack_pop(&(vm.dst)) == (3 ^ 9));
+  assert(stack_pop(&(vm.dst)) == (3 & 9));
 
   okvm_free(&vm);
 
@@ -165,29 +159,23 @@ void test_skip_lit() {
   printf("...test_skip_lit PASSED\n");
 }
 
-#define DBG_SP (0b10001111)
-#define DBG_RP (0b10011111)
-#define DBG_PC (0b10101111)
-#define DBG_WORDSIZE (0b10111111)
+#define SYS_WORDSIZE (0b10001111)
+#define SYS_DEVS (0b10011111)
+#define SYS_STACKS (0b10101111)
+#define SYS_PC (0b10111111)
 #define PSH1 (0b10001010)
 
-void test_dbg() {
+void test_dbg() { // TODO rename to test_sys?
   unsigned char program[8] = {
-    DBG_WORDSIZE, // should push "3"
-    DBG_PC, // should push "1" as a WORD
+    SYS_WORDSIZE, // should push "3"
+    SYS_PC, // should push "1" as a WORD
     LIT1,
     69,
     PSH1, // 69 on top of return stack
-    DBG_RP, // should push "1"
-    DBG_SP, // should push "1 + 1 + (OKVM_WORD_SIZE)" I think
+    SYS_DEVS, // should push "0"
+    SYS_STACKS, // should push sp = 5 then rp = 1
     0
   };
-
-  // so after running, stack should be (descending, so top is top):
-  // 5 (or 2 + OKVM_WORD_SIZE)
-  // 1
-  // 0x010000
-  // 3
 
   OkVM vm;
   okvm_init(&vm, program, 8);
@@ -197,16 +185,22 @@ void test_dbg() {
     okvm_tick(&vm);
   }
 
-  unsigned char maybe_sp = stack_pop(&(vm.dst));
   unsigned char maybe_rp = stack_pop(&(vm.dst));
+  unsigned char maybe_sp = stack_pop(&(vm.dst));
+  unsigned char maybe_devs = stack_pop(&(vm.dst));
   unsigned int maybe_pc = stack_popn(&(vm.dst), OKVM_WORD_SIZE);
   unsigned char maybe_wordsize = stack_pop(&(vm.dst));
   
-  assert(maybe_sp == (2 + OKVM_WORD_SIZE));
+  assert(maybe_sp == 5);
+
   assert(maybe_rp == vm.rst.sp);
   assert(maybe_rp == 1); // 1 should also work, testing just in case
+
+  assert(maybe_devs == vm.num_devices);
+  assert(maybe_devs == 0);
+
   assert(((size_t) maybe_pc) == 1);
-  assert(maybe_wordsize = OKVM_WORD_SIZE);
+  assert(maybe_wordsize == OKVM_WORD_SIZE);
   
   okvm_free(&vm);
 
@@ -278,8 +272,8 @@ void test_str() {
 }
 
 #define STR1 (0b10000110)
-#define SYN1 (0b10001110)
-#define SERIAL_OUT_ID (0b10001000)
+#define INT1 (0b10001110)
+#define SERIAL_OUT_ID (0b00000000)
 
 // serial output device function:
 unsigned char serial_output(OkVM* vm) {
@@ -301,7 +295,7 @@ void test_syn_stdout() {
     STR1, // write to magic number
     LIT1,
     SERIAL_OUT_ID,
-    SYN1, // flush to output
+    INT1, // flush to output
     0
   };
 
