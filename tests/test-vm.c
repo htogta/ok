@@ -276,10 +276,16 @@ void test_str() {
 #define SERIAL_OUT_ID (0b00000000)
 
 // serial output device function:
-unsigned char serial_output(OkVM* vm) {
-  char ch = vm->ram[0x00babe];
-  putchar(ch);
-  return (unsigned char) ch;
+unsigned char serial_output(OkVM* vm, unsigned char op) {
+  assert(op < 16);
+  
+  if (op == 0) {
+    char ch = vm->ram[0x00babe];
+    putchar(ch);
+    return (unsigned char) ch;
+  } else {
+    return 255;
+  }
 }
 
 void test_syn_stdout() {

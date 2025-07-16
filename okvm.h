@@ -36,8 +36,8 @@ typedef struct OkVM {
   OkStack dst; // data stack
   OkStack rst; // return stack
   size_t pc; // program counter
-  size_t num_devices; // track number of registered devices (FIXME does this need to be size_t?)
-  unsigned char (*devices[16])(struct OkVM*); // array of function pointers for devices
+  size_t num_devices; // track number of registered devices
+  unsigned char (*devices[16])(struct OkVM*, unsigned char op); // dev fn ptrs
   unsigned char* ram;
   unsigned char* rom;
   OkVM_status status;
@@ -48,7 +48,7 @@ int okvm_init(OkVM* vm, unsigned char* program, size_t rom_size);
 int okvm_init_from_file(OkVM* vm, const char* filepath);
 
 // "devices" are just callback functions that mutate the state of the VM
-int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn)(OkVM*));
+int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn)(OkVM*, unsigned char));
 OkVM_status okvm_tick(OkVM* vm);
 
 // this just frees the VM RAM and ROM, everything else (should) just be on
@@ -174,7 +174,7 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   return 0; // success!
 }
 
-int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn) (OkVM*)) {
+int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn) (OkVM*, unsigned char)) {
   // NOTE: nonzero exit code means failure
 
   // ensure that we have registered less than 16 devices
@@ -216,8 +216,8 @@ static void trigger_device(OkVM* vm, unsigned char id) {
     vm->status = OKVM_PANIC;
     return;
   } else {
-    unsigned char (*fn)(OkVM*) = vm->devices[index];
-    unsigned char result = fn(vm);
+    unsigned char (*fn)(OkVM*, unsigned char) = vm->devices[index];
+    unsigned char result = fn(vm, op);
     
     // push the result onto the stack
     stack_push(&(vm->dst), result);
