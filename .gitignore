@@ -3,5 +3,5 @@ tests/*
 !tests/test-vm.c
 
 # same for examples
-build/*
-!build/okmin.c
+examples/*
+!examples/okmin.c
