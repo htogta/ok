@@ -309,7 +309,7 @@ void test_syn_stdout() {
   okvm_init(&vm, program, 13);
 
   // registering serial device
-  int reg_success = okvm_register_device(&vm, SERIAL_OUT_ID, serial_output);
+  int reg_success = okvm_register_device(&vm, serial_output);
   assert(reg_success == 0);
 
   vm.status = OKVM_RUNNING;

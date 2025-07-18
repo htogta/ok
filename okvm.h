@@ -48,7 +48,7 @@ int okvm_init(OkVM* vm, unsigned char* program, size_t rom_size);
 int okvm_init_from_file(OkVM* vm, const char* filepath);
 
 // "devices" are just callback functions that mutate the state of the VM
-int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn)(OkVM*, unsigned char));
+int okvm_register_device(OkVM* vm, unsigned char (*fn)(OkVM*, unsigned char));
 OkVM_status okvm_tick(OkVM* vm);
 
 // this just frees the VM RAM and ROM, everything else (should) just be on
@@ -174,7 +174,7 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   return 0; // success!
 }
 
-int okvm_register_device(OkVM* vm, unsigned char id, unsigned char (*fn) (OkVM*, unsigned char)) {
+int okvm_register_device(OkVM* vm, unsigned char (*fn) (OkVM*, unsigned char)) {
   // NOTE: nonzero exit code means failure
 
   // ensure that we have registered less than 16 devices
