@@ -23,11 +23,11 @@ argW => "arg" is the machine's word size (in # of bytes)
 
 arg(1-4) => takes 1-4 bytes
 
-- `add` ( a* b* -- b+a* ) add 2 stack values
-- `and` ( a* b* -- b&a* ) bitwise-and two values
-- `xor` ( a* b* -- b^a* ) xor two values
+- `add` ( a* b* -- a+b* ) add 2 stack values
+- `and` ( a* b* -- a&b* ) bitwise-and two values
+- `xor` ( a* b* -- a^b* ) xor two values
 - `shf` ( n* s1 -- m* ) logically shift a value- high nibble is left shift, low nibble is right shift, with right shift occurring first
-- `cmp` ( a* b* -- cmp1 ) cmp = 0 if equal, 1 if b > a, 255 if b < a
+- `cmp` ( a* b* -- cmp1 ) cmp = 0 if equal, 1 if a > b, 255 if a < b
 - `swp` ( a* b* -- b* a* ) swap top 2 values
 - `str` ( data* addrW -- ) store data at RAM[addr]
 - `lod` ( addrW -- data* ) fetch data at RAM[addr]

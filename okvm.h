@@ -236,17 +236,17 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
     case 0: // add
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      stack_pushn(&(vm->dst), argsize + 1, b + a);
+      stack_pushn(&(vm->dst), argsize + 1, a + b);
       break;
     case 1: // and
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      stack_pushn(&(vm->dst), argsize + 1, b & a);
+      stack_pushn(&(vm->dst), argsize + 1, a & b);
       break;
     case 2: // xor
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      stack_pushn(&(vm->dst), argsize + 1, b ^ a);
+      stack_pushn(&(vm->dst), argsize + 1, a ^ b);
       break;
     case 3: // shf
       byte = stack_pop(&(vm->dst));
@@ -264,9 +264,9 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
     case 5: // cmp
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      if (b > a) {
+      if (a > b) {
         stack_push(&(vm->dst), 1);
-      } else if (b < a) {
+      } else if (a < b) {
         stack_push(&(vm->dst), 255);
       } else {
         stack_push(&(vm->dst), 0);
