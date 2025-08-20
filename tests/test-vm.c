@@ -4,18 +4,20 @@
 #include <assert.h>
 
 void test_multibyte();
+void test_shf();
 void test_jmp();
 void test_skip();
 void test_skip_lit();
 void test_dbg();
 void test_lod();
-void test_str(); 
+void test_str();
 void test_syn_stdout();
 
 int main() {
   printf("Testing vm...\n");
   
   test_multibyte();
+  test_shf();
   test_jmp();
   test_skip();
   test_skip_lit();
@@ -269,6 +271,36 @@ void test_str() {
   okvm_free(&vm);
 
   printf("...test_str PASSED\n");
+}
+
+#define SHF2 (0b10010011)
+#define RIGHT4_LEFT3 (0b00110100)
+
+void test_shf() {
+  unsigned char program[] = {
+    LIT2,
+    0x02,
+    0x01, // 258 on the stack (0x102)
+    LIT1,
+    RIGHT4_LEFT3,
+    SHF2,
+    0
+  };
+
+  OkVM vm;
+  okvm_init(&vm, program, sizeof(program));
+
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
+  }
+
+  unsigned short top = (unsigned short) stack_popn(&(vm.dst), 2);
+  assert(top == ((258 >> 4) << 3));
+
+  okvm_free(&vm);
+
+  printf("...test_shf PASSED\n");
 }
 
 #define STR1 (0b10000110)

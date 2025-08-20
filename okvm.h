@@ -77,6 +77,7 @@ inline unsigned char stack_pop(OkStack* s) {
 }
 
 // pop 1-4 bytes as a 32-bit int
+// NOTE: the top of the stack is the LOW BYTE
 inline unsigned int stack_popn(OkStack* s, unsigned char n) {
   unsigned int out = 0;
   for (int i = 0; i < n; i++) {
@@ -103,6 +104,8 @@ inline void stack_pushn(OkStack* s, unsigned char n, unsigned int val) {
 #include <stdio.h>
 // for file handling in okvm_init_from_file
 
+#define OKVM_MEM_SIZE (1 << (OKVM_WORD_SIZE * 8))
+
 // initialize an instance of the VM (ALLOCATES MEMORY !!!)
 // return nonzero if failed
 int okvm_init(OkVM* vm, unsigned char* program, size_t rom_size) { // NOTE: allocates memory!
@@ -118,11 +121,11 @@ int okvm_init(OkVM* vm, unsigned char* program, size_t rom_size) { // NOTE: allo
   }
 
   // allocate vm ram (TODO don't allocate it all at once? It's a lot)
-  vm->ram = (unsigned char*) calloc(1 << (OKVM_WORD_SIZE * 8), sizeof(unsigned char));
+  vm->ram = (unsigned char*) calloc(OKVM_MEM_SIZE, sizeof(unsigned char));
   if (vm->ram == NULL) return 1;
   
   // allocate vm rom (TODO see note above)
-  vm->rom = (unsigned char*) calloc(1 << (OKVM_WORD_SIZE * 8), sizeof(unsigned char));
+  vm->rom = (unsigned char*) calloc(OKVM_MEM_SIZE, sizeof(unsigned char));
   if (vm->rom == NULL) return 1;
 
   // copy program to rom
@@ -147,7 +150,7 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   if (file_size > (1 << (OKVM_WORD_SIZE * 8))) return 1;
 
   // file bytes are read directly into ROM
-  vm->rom = (unsigned char*) calloc(1 << (OKVM_WORD_SIZE * 8), sizeof(unsigned char));
+  vm->rom = (unsigned char*) calloc(OKVM_MEM_SIZE, sizeof(unsigned char));
   if (vm->rom == NULL) return 1;
   
   size_t bytes_read = fread(vm->rom, sizeof(unsigned char), file_size, fptr);
@@ -168,7 +171,7 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   }
 
   // allocate vm ram (TODO don't allocate it all at once? It's a lot)
-  vm->ram = (unsigned char*) calloc(1 << (OKVM_WORD_SIZE * 8), sizeof(unsigned char));
+  vm->ram = (unsigned char*) calloc(OKVM_MEM_SIZE, sizeof(unsigned char));
   if (vm->ram == NULL) return 1;
 
   return 0; // success!
@@ -189,6 +192,7 @@ int okvm_register_device(OkVM* vm, unsigned char (*fn) (OkVM*, unsigned char)) {
 
 // defining fetch as a macro, it's faster
 #define FETCH(vm) ((vm)->rom[(vm)->pc++])
+
 static void execute(OkVM* vm, unsigned char instr);
 
 // one clock cycle of the VM
@@ -251,7 +255,8 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
     case 3: // shf
       byte = stack_pop(&(vm->dst));
       n = stack_popn(&(vm->dst), argsize + 1);
-      n = (n >> (byte & 0x00ff)) << ((byte & 0xff00) >> 4); // eeyikes
+      n = n >> (byte & 0x0f); // right shift first
+      n = n << ((byte & 0xf0) >> 4); // then left
       stack_pushn(&(vm->dst), argsize + 1, n);
       break;
     case 4: // swp
