@@ -78,3 +78,8 @@ to determine which system value to push onto stack:
 2 = stack and return pointers (2 bytes; one byte for each, with return pointer on top)
 
 3 = current program counter value (one word)
+
+## Note on memory and the stack
+
+Integers are stored in *big-endian* order in RAM and ROM, and multi-byte integers
+on the stack have their low (most significant) byte closest to the top.
