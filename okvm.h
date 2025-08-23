@@ -81,7 +81,7 @@ inline unsigned char stack_pop(OkStack* s) {
 inline unsigned int stack_popn(OkStack* s, unsigned char n) {
   unsigned int out = 0;
   for (int i = 0; i < n; i++) {
-    out = (out << 8) | stack_pop(s);
+    out |= (unsigned int)stack_pop(s) << (8 * i);
   }
   
   return out;
@@ -89,7 +89,7 @@ inline unsigned int stack_popn(OkStack* s, unsigned char n) {
 
 // push 1-4 bytes of a 32-bit int
 inline void stack_pushn(OkStack* s, unsigned char n, unsigned int val) {
-  for (int i = 0; i < n; i++) {
+  for (int i = n - 1; i >= 0; i--) {
     unsigned char byte = (unsigned char) ((val >> (8 * i)) & 0xFF);
     stack_push(s, byte);
   }

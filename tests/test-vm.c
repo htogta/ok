@@ -4,6 +4,7 @@
 #include <assert.h>
 
 void test_multibyte();
+void test_be_stack();
 void test_shf();
 void test_jmp();
 void test_skip();
@@ -17,6 +18,7 @@ int main() {
   printf("Testing vm...\n");
   
   test_multibyte();
+  test_be_stack();
   test_shf();
   test_jmp();
   test_skip();
@@ -42,11 +44,11 @@ int main() {
 void test_multibyte() {
   unsigned char program[8] = {
     LIT2, // lit2
-    0x15, 
     0x09, // 0915 or 2325
+    0x15, 
     LIT2, // lit2
-    0xab, 
     0x0b, // 0bab or 2987  
+    0xab, 
     ADD2, // add2
     0 // halt
   };
@@ -66,6 +68,41 @@ void test_multibyte() {
   okvm_free(&vm);
 
   printf("...test_multibyte PASSED\n");
+}
+
+// we doin big-endian now, coz then values are stored on the stack 
+// in a way that makes more sense.
+void test_be_stack() {
+  unsigned char program[] = {
+    LIT2,
+    0x01, // 0x0102 is on the stack, i.e. 258
+    0x02,
+    LIT2,
+    0x01,
+    0x02,
+    0
+  };
+
+  OkVM vm;
+  okvm_init(&vm, program, sizeof(program));
+  
+  vm.status = OKVM_RUNNING;
+  while (vm.status == OKVM_RUNNING) {
+    okvm_tick(&vm);
+  }
+
+  // unsigned short top = stack_popn(&(vm.dst), 2);
+  assert(stack_popn(&(vm.dst), 2) == 0x102); // make sure we got the right number
+  
+  // popping one byte of that value should give me the LEAST significant byte,
+  // i.e. 0x02
+  assert(stack_pop(&(vm.dst)) == 0x02);
+  // then 0x01
+  assert(stack_pop(&(vm.dst)) == 0x01);
+
+  okvm_free(&vm);
+
+  printf("...test_big_endian_stack PASSED\n");
 }
 
 // instructions for test_jmp
@@ -216,9 +253,9 @@ void test_dbg() { // TODO rename to test_sys?
 void test_lod() {
   unsigned char program[6] = {
     LIT3,
-    0xe7,
-    0x03,
     0,
+    0x03,
+    0xe7,
     LOD2,
     0
   };
@@ -227,8 +264,8 @@ void test_lod() {
   okvm_init(&vm, program, 6);
 
   // pre-set RAM[999] to 0xdead
-  vm.ram[0x03e7] = 0xad; // note 0x03e7 is 999 in hex 
-  vm.ram[1000] = 0xde;
+  vm.ram[0x3e7] = 0xde; // note 0x03e7 is 999 in hex 
+  vm.ram[1000] = 0xad;
 
   vm.status = OKVM_RUNNING;
   while (vm.status == OKVM_RUNNING) {
@@ -236,6 +273,7 @@ void test_lod() {
   }
 
   unsigned int top = stack_popn(&(vm.dst), 2);
+  // printf("top = %4x\n", top); fflush(stdout);
   assert(top == 0xdead);
 
   okvm_free(&vm);
@@ -246,12 +284,12 @@ void test_lod() {
 void test_str() {
   unsigned char program[9] = {
     LIT2,
-    0xcd,
     0xab,
+    0xcd,
     LIT3,
+    0,
+    0,
     69,
-    0,
-    0,
     STR2, // store 0xabcd at RAM[69]
     0
   };
@@ -264,9 +302,9 @@ void test_str() {
     okvm_tick(&vm);
   }
 
-  // printf("RAM[69] = 0x%02x\n", vm.ram[69]);
-  assert(vm.ram[69] == 0xcd);
-  assert(vm.ram[70] == 0xab); // NOTE little-endian in RAM ofc
+  // printf("ram[69] = %4x\n", vm.ram[69]); fflush(stdout);
+  assert(vm.ram[69] == 0xab);
+  assert(vm.ram[70] == 0xcd); // NOTE big-endian in RAM
 
   okvm_free(&vm);
 
@@ -279,8 +317,8 @@ void test_str() {
 void test_shf() {
   unsigned char program[] = {
     LIT2,
-    0x02,
     0x01, // 258 on the stack (0x102)
+    0x02,
     LIT1,
     RIGHT4_LEFT3,
     SHF2,
@@ -296,6 +334,7 @@ void test_shf() {
   }
 
   unsigned short top = (unsigned short) stack_popn(&(vm.dst), 2);
+  // printf("TOP = %d\n", top); fflush(stdout);
   assert(top == ((258 >> 4) << 3));
 
   okvm_free(&vm);
@@ -327,9 +366,9 @@ void test_syn_stdout() {
     LIT1,
     0x40, // @ char
     LIT3,
-    0xbe,
-    0xba,
     0x00,
+    0xba,
+    0xbe,
     STR1, // write to magic number
     LIT1,
     SERIAL_OUT_ID,
