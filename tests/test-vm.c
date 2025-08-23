@@ -9,7 +9,7 @@ void test_shf();
 void test_jmp();
 void test_skip();
 void test_skip_lit();
-void test_dbg();
+void test_nop();
 void test_lod();
 void test_str();
 void test_syn_stdout();
@@ -23,7 +23,7 @@ int main() {
   test_jmp();
   test_skip();
   test_skip_lit();
-  test_dbg();
+  test_nop();
   test_lod();
   test_str();
   test_syn_stdout();
@@ -198,52 +198,29 @@ void test_skip_lit() {
   printf("...test_skip_lit PASSED\n");
 }
 
-#define SYS_WORDSIZE (0b10001111)
-#define SYS_DEVS (0b10011111)
-#define SYS_STACKS (0b10101111)
-#define SYS_PC (0b10111111)
-#define PSH1 (0b10001010)
+#define NOP (0b10001111)
 
-void test_dbg() { // TODO rename to test_sys?
-  unsigned char program[8] = {
-    SYS_WORDSIZE, // should push "3"
-    SYS_PC, // should push "1" as a WORD
-    LIT1,
-    69,
-    PSH1, // 69 on top of return stack
-    SYS_DEVS, // should push "0"
-    SYS_STACKS, // should push sp = 5 then rp = 1
+void test_nop() {
+  unsigned char program[] = {
+    NOP, 
+    NOP,
     0
   };
 
   OkVM vm;
-  okvm_init(&vm, program, 8);
+  okvm_init(&vm, program, sizeof(program));
 
   vm.status = OKVM_RUNNING;
   while (vm.status == OKVM_RUNNING) {
     okvm_tick(&vm);
   }
 
-  unsigned char maybe_rp = stack_pop(&(vm.dst));
-  unsigned char maybe_sp = stack_pop(&(vm.dst));
-  unsigned char maybe_devs = stack_pop(&(vm.dst));
-  unsigned int maybe_pc = stack_popn(&(vm.dst), OKVM_WORD_SIZE);
-  unsigned char maybe_wordsize = stack_pop(&(vm.dst));
-  
-  assert(maybe_sp == 5);
+  assert(vm.dst.sp == 0);
+  assert(vm.pc == 3);
 
-  assert(maybe_rp == vm.rst.sp);
-  assert(maybe_rp == 1); // 1 should also work, testing just in case
-
-  assert(maybe_devs == vm.num_devices);
-  assert(maybe_devs == 0);
-
-  assert(((size_t) maybe_pc) == 1);
-  assert(maybe_wordsize == OKVM_WORD_SIZE);
-  
   okvm_free(&vm);
 
-  printf("...test_dbg PASSED\n");
+  printf("...test_nop PASSED\n");
 }
 
 #define STR2 (0b10010110)

@@ -318,24 +318,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize)
         trigger_device(vm, stack_pop(&(vm->dst)));
       }
       break;
-    case 15: // sys
-      switch (argsize) {
-        case 0: // push word size in bytes
-          stack_push(&(vm->dst), OKVM_WORD_SIZE);
-          break;
-        case 1: // push number of registered devices
-          stack_push(&(vm->dst), (unsigned char) vm->num_devices);
-          break;
-        case 2:
-          // push stack and return pointers
-          stack_push(&(vm->dst), (unsigned char) vm->dst.sp);
-          stack_push(&(vm->dst), (unsigned char) vm->rst.sp);
-          break;
-        case 3:
-          // push current pc
-          stack_pushn(&(vm->dst), OKVM_WORD_SIZE, vm->pc - 1);
-          break;
-      }
+    case 15: // nop
       break;
   }
 }

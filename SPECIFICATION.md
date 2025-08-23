@@ -38,7 +38,7 @@ arg(1-4) => takes 1-4 bytes
 - `jmp` ( dest* -- ) jump to dest
 - `lit` ( -- val* ) push immediate bytes
 - `int` ( id* -- stat* ) device call/interrupt (see below)
-- `sys` ( it's complicated, see below )
+- `nop` ( -- ) no operation, regardless of `a` flag (although `b` flag still works)
 
 ### The "int" opcode
 
@@ -63,21 +63,6 @@ If `int` tries to call a device that doesn't exist, the VM will panic.
 
 You can call multiple devices with a single `int` instruction, using the `aa`
 bytecode flags.
-
-### The "sys" opcode
-
-The "system" instruction pushes VM system values to the stack.
-
-This instruction, rather than using `aa` to determine argument size, uses `aa` 
-to determine which system value to push onto stack:
-
-0 = machine word size in bytes (one byte)
-
-1 = number of registered devices (one byte)
-
-2 = stack and return pointers (2 bytes; one byte for each, with return pointer on top)
-
-3 = current program counter value (one word)
 
 ## Note on memory and the stack
 
