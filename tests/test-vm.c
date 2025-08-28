@@ -12,7 +12,7 @@ void test_skip_lit();
 void test_nop();
 void test_lod();
 void test_str();
-void test_syn_stdout();
+void test_int_stdout();
 
 int main() {
   printf("Testing vm...\n");
@@ -26,7 +26,7 @@ int main() {
   test_nop();
   test_lod();
   test_str();
-  test_syn_stdout();
+  test_int_stdout();
 
   printf("Done.\n");
   
@@ -139,12 +139,12 @@ void test_jmp() {
 void test_skip() {
   unsigned char program[10] = {
     LIT1,
+    0, // stack is now [0]
+    LIT1,
     0x09,
     LIT1,
-    0x03, // stack is [9, 3] <- top
-    LIT1,
-    0, // stack is now [9, 3, 0]
-    ADD1_SKIP, // pop, since 0, skip add1
+    0x03, // stack is [0, 9, 3] <- top
+    ADD1_SKIP, // pop 9 and 3, then pop 0, since 0, restore 9 and 3 and skip add1
     AND1, // run AND1 instead, stack is now [3&9]
     0
   };
@@ -174,13 +174,13 @@ void test_skip_lit() {
   unsigned char program[8] = {
     LIT1, // push 69
     69,
-    LIT1, // push 2 
-    0,
+    LIT1, // push 0 
+    0, 
     LIT2_SKIP, // all this gets skipped, straight to halt
     0xcd,
     0xab,
     0 // should halt with 69 on the stack top
-  };
+  }; // "#69 #00 #abcd?"
 
   OkVM vm;
   okvm_init(&vm, program, 8);
@@ -336,7 +336,7 @@ unsigned char serial_output(OkVM* vm, unsigned char op) {
   }
 }
 
-void test_syn_stdout() {
+void test_int_stdout() {
   printf("Here is an \"at\" symbol: <");
   
   unsigned char program[13] = {
@@ -374,5 +374,5 @@ void test_syn_stdout() {
   okvm_free(&vm);
 
   // no need for assert, just look in the standard output.
-  printf(">\n...test_syn_stdout PASSED\n");
+  printf(">\n...test_int_stdout PASSED\n");
 }

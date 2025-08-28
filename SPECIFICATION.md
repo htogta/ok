@@ -10,8 +10,10 @@ If the least-significant-bit is not a 1, it is interpreted as a "halt"
 instruction, stopping the machine. This way, uninitialized values in ROM 
 (zeroes, by default) will halt execution.
 
-If bit `b` is 1, pop the top byte on the stack before executing the opcode. If 
-that top byte is zero, skip the current instruction.
+If bit `b` is 1, the opcode's arguments are popped, and then a single-byte
+boolean flag is popped afterwards. If that flag byte is zero, the opcode's 
+arguments are restored to the stack (minus the flag byte), and the opcode is 
+skipped.
 
 `a` is the variable argument byte counter, taking values from 1 to 4.
 

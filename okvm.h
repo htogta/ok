@@ -16,7 +16,6 @@ void stack_pushn(OkStack* s, unsigned char n, unsigned int val);
 unsigned int stack_popn(OkStack* s, unsigned char n);
 OkStack stack_init();
 
-// TODO make this user-definable?
 #define OKVM_WORD_SIZE (3)
 
 #define OKVM_MAX_DEVICES (16)
@@ -228,97 +227,260 @@ static void trigger_device(OkVM* vm, unsigned char id) {
   }
 }
 
-static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize) {
+static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize, unsigned char skip_flag) {
   
   // pre-declaring these
   unsigned int a, b;
   size_t addr;
   unsigned int n;
   unsigned char byte;
+  unsigned char buff[4] = {0}; // using this just for the `int` opcode
 
   switch (opcode) {
     case 0: // add
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      stack_pushn(&(vm->dst), argsize + 1, a + b);
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          stack_pushn(&(vm->dst), argsize + 1, a + b);
+        } else {
+          stack_pushn(&(vm->dst), argsize + 1, a);
+          stack_pushn(&(vm->dst), argsize + 1, b);
+        }
+      } else {
+        stack_pushn(&(vm->dst), argsize + 1, a + b);
+      }
       break;
     case 1: // and
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      stack_pushn(&(vm->dst), argsize + 1, a & b);
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          stack_pushn(&(vm->dst), argsize + 1, a & b);
+        } else {
+          stack_pushn(&(vm->dst), argsize + 1, a);
+          stack_pushn(&(vm->dst), argsize + 1, b);
+        }
+      } else {
+        stack_pushn(&(vm->dst), argsize + 1, a & b);
+      }
       break;
     case 2: // xor
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      stack_pushn(&(vm->dst), argsize + 1, a ^ b);
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          stack_pushn(&(vm->dst), argsize + 1, a ^ b);
+        } else {
+          stack_pushn(&(vm->dst), argsize + 1, a);
+          stack_pushn(&(vm->dst), argsize + 1, b);
+        }
+      } else {
+        stack_pushn(&(vm->dst), argsize + 1, a ^ b);
+      }
       break;
     case 3: // shf
       byte = stack_pop(&(vm->dst));
       n = stack_popn(&(vm->dst), argsize + 1);
-      n = n >> (byte & 0x0f); // right shift first
-      n = n << ((byte & 0xf0) >> 4); // then left
-      stack_pushn(&(vm->dst), argsize + 1, n);
+
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          n = n >> (byte & 0x0f); // right shift first
+          n = n << ((byte & 0xf0) >> 4); // then left
+          stack_pushn(&(vm->dst), argsize + 1, n);
+        } else {
+          stack_pushn(&(vm->dst), argsize + 1, n);
+          stack_push(&(vm->dst), byte);
+        }
+      } else {
+        n = n >> (byte & 0x0f); // right shift first
+        n = n << ((byte & 0xf0) >> 4); // then left
+        stack_pushn(&(vm->dst), argsize + 1, n);
+      }
       break;
     case 4: // swp
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      // i.e. push b, then push a
-      stack_pushn(&(vm->dst), argsize + 1, b);
-      stack_pushn(&(vm->dst), argsize + 1, a);
+
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          // i.e. push b, then push a
+          stack_pushn(&(vm->dst), argsize + 1, b);
+          stack_pushn(&(vm->dst), argsize + 1, a);
+        } else {
+          stack_pushn(&(vm->dst), argsize + 1, a);
+          stack_pushn(&(vm->dst), argsize + 1, b);
+        }
+      } else {
+        // i.e. push b, then push a
+        stack_pushn(&(vm->dst), argsize + 1, b);
+        stack_pushn(&(vm->dst), argsize + 1, a);
+      }
       break;
     case 5: // cmp
       b = stack_popn(&(vm->dst), argsize + 1);
       a = stack_popn(&(vm->dst), argsize + 1);
-      if (a > b) {
-        stack_push(&(vm->dst), 1);
-      } else if (a < b) {
-        stack_push(&(vm->dst), 255);
+
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          if (a > b) {
+            stack_push(&(vm->dst), 1);
+          } else if (a < b) {
+            stack_push(&(vm->dst), 255);
+          } else {
+            stack_push(&(vm->dst), 0);
+          }
+        } else { // restore args
+          stack_pushn(&(vm->dst), argsize + 1, a);
+          stack_pushn(&(vm->dst), argsize + 1, b);
+        }
       } else {
-        stack_push(&(vm->dst), 0);
+        if (a > b) {
+          stack_push(&(vm->dst), 1);
+        } else if (a < b) {
+          stack_push(&(vm->dst), 255);
+        } else {
+          stack_push(&(vm->dst), 0);
+        }
       }
       break;
     case 6: // str
       addr = (size_t) stack_popn(&(vm->dst), OKVM_WORD_SIZE);
-      for (int i = argsize; i >= 0; i--) {
-        vm->ram[addr + i] = stack_pop(&(vm->dst)); 
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          for (int i = argsize; i >= 0; i--) {
+            vm->ram[addr + i] = stack_pop(&(vm->dst)); 
+          }
+        } else { // restore
+          stack_pushn(&(vm->dst), OKVM_WORD_SIZE, addr);
+        }
+      } else {
+        for (int i = argsize; i >= 0; i--) {
+          vm->ram[addr + i] = stack_pop(&(vm->dst)); 
+        }
       }
       break;
     case 7: // lod
       addr = (size_t) stack_popn(&(vm->dst), OKVM_WORD_SIZE);
-      for (int i = 0; i < argsize + 1; i++) {
-        stack_push(&(vm->dst), vm->ram[addr + i]);
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          for (int i = 0; i < argsize + 1; i++) {
+            stack_push(&(vm->dst), vm->ram[addr + i]);
+          }
+        } else { // restore
+          stack_pushn(&(vm->dst), OKVM_WORD_SIZE, addr);
+        }
+      } else {
+        for (int i = 0; i < argsize + 1; i++) {
+          stack_push(&(vm->dst), vm->ram[addr + i]);
+        }
       }
       break;
     case 8: // dup
       n = stack_popn(&(vm->dst), argsize + 1);
-      stack_pushn(&(vm->dst), argsize + 1, n);
-      stack_pushn(&(vm->dst), argsize + 1, n);
+
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          stack_pushn(&(vm->dst), argsize + 1, n);
+          stack_pushn(&(vm->dst), argsize + 1, n);
+        } else { // restore
+          stack_pushn(&(vm->dst), argsize + 1, n);
+        }
+      } else {
+        stack_pushn(&(vm->dst), argsize + 1, n);
+        stack_pushn(&(vm->dst), argsize + 1, n);
+      }
       break;
     case 9: // drp (pop from stack)
-      stack_popn(&(vm->dst), argsize + 1);
+      n = stack_popn(&(vm->dst), argsize + 1);
+
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) == 0) {
+          stack_pushn(&(vm->dst), argsize + 1, n);
+        } // this one's a lot simpler
+      }
       break;
     case 10: // psh (push onto return stack)
       n = stack_popn(&(vm->dst), argsize + 1);
-      stack_pushn(&(vm->rst), argsize + 1, n);
+
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          stack_pushn(&(vm->rst), argsize + 1, n);
+        } else { // restore
+          stack_pushn(&(vm->dst), argsize + 1, n);
+        }
+      } else {
+        stack_pushn(&(vm->rst), argsize + 1, n);
+      }
       break;
-    case 11: // pop (off of return stack)
+    case 11: // pop (off of return stack) TODO left off here
       n = stack_popn(&(vm->rst), argsize + 1);
-      stack_pushn(&(vm->dst), argsize + 1, n);
+
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          stack_pushn(&(vm->dst), argsize + 1, n);
+        } else { // restore
+          stack_pushn(&(vm->rst), argsize + 1, n);
+        }
+      } else {
+        stack_pushn(&(vm->dst), argsize + 1, n);
+      }
       break;
     case 12: // jmp
-      vm->pc = (size_t) stack_popn(&(vm->dst), argsize + 1);
+      addr = (size_t) stack_popn(&(vm->dst), argsize + 1);
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          vm->pc = addr;
+        } else { // restore
+          stack_pushn(&(vm->rst), argsize + 1, addr);
+        }
+      } else {
+        vm->pc = addr;
+      }
       break;
     case 13: // lit
-      for (int i = 0; i < argsize + 1; i++) {
-        stack_push(&(vm->dst), FETCH(vm));
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          for (int i = 0; i < argsize + 1; i++) {
+            stack_push(&(vm->dst), FETCH(vm));
+          }
+        } else {
+          // we gotta skip the args in the ROM as well
+          for (int i = 0; i < argsize + 1; i++) { FETCH(vm); }
+        }
+      } else {
+        for (int i = 0; i < argsize + 1; i++) {
+          stack_push(&(vm->dst), FETCH(vm));
+        }
       }
       break;
     case 14: // int
       for (int i = 0; i < argsize + 1; i++) {
-        trigger_device(vm, stack_pop(&(vm->dst)));
+        buff[i] = stack_pop(&(vm->dst));
       }
+    
+      if (skip_flag) {
+        if (stack_pop(&(vm->dst)) != 0) {
+          for (int i = 0; i < argsize + 1; i++) {
+            trigger_device(vm, buff[i]);
+          }
+        } else { // restore
+          for (int i = argsize; i >= 0; i--) {
+            stack_push(&(vm->dst), buff[i]);
+          }
+        }
+      } else {
+        for (int i = 0; i < argsize + 1; i++) {
+          trigger_device(vm, buff[i]);
+        }
+      }
+    
       break;
     case 15: // nop
+      if (skip_flag) {
+        // even tho it's meaningless, skip flag here can still pop a flag byte
+        stack_pop(&(vm->dst));
+      }
       break;
   }
 }
@@ -338,18 +500,8 @@ static void execute(OkVM* vm, unsigned char instr) {
   // decoding opcodes
   unsigned char opcode = instr & 0x000f;
 
-  // handling "b" -> the skip flag
-  if ((instr & 0b01000000) != 0) {
-    unsigned char top = stack_pop(&(vm->dst));
-    if (top == 0) { // if 0, skip
-      if (opcode == 0b1101) { // if lit opcode, skip immediate byte args too
-        for (int i = 0; i < argsize + 1; i++) { FETCH(vm); }
-      }
-      return;
-    }
-  }
-
-  handle_opcode(vm, opcode, argsize); // split this off for brevity
+  // split this off for brevity
+  handle_opcode(vm, opcode, argsize, (instr & 0b01000000) != 0); 
 }
 
 
