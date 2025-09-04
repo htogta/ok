@@ -56,18 +56,6 @@ build the example emulator.
 
 Run tests using `just test`.
 
-## Roadmap
-
-- [x] Single-header implementation
-- [ ] Reimplementing assembler in C (IN PROGRESS)
-- [ ] Compilation flags for different device word sizes (1, 2, 3, or 4 bytes)
-- [ ] SDL (or raylib?) backend for graphical emulator
-
-
-Note: the assembler currently in development is not a "standard" for how the 
-`ok` computer's assembly language is supposed to look- feel free to experiment
-with creating your own assembly languages for this VM.
-
 ## Goals
 
 `ok` is a simple stack-based virtual machine designed with the following goals 
