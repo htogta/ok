@@ -1,16 +1,18 @@
-# ok - A Minimal Stack-Based Virtual Machine
+= ok - A Minimal Stack-Based Virtual Machine
 
 This repository contains the specification and reference implementation for the 
 `ok` (virtual) computer.
 
-> WARNING: this virtual computer and its specification are still in beta; expect limited documentation and potential non-backwards-compatible updates in the future.
+> WARNING: this virtual computer and its specification are still in beta; expect 
+limited documentation and potential non-backwards-compatible updates in the 
+future.
 
-## Including as a library
+== Including as a library
 
 The VM is implemented as a single C header, so creating your own minimal emulator
 is very easy. Here is an example:
 
-```c
+```
 #define OKVM_IMPLEMENTATION
 #include "okvm.h"
 // okvm.h includes stdio already, so we don't need to include it again
@@ -48,15 +50,16 @@ unsigned char serial_output(OkVM* vm, unsigned char op) {
 }
 ```
 
-## Running examples/tests
+== Running examples/tests
 
-If you have [just](https://github.com/casey/just) installed, simply clone this 
-repository, navigate to the repository folder, and run `just build-example` to
-build the example emulator.
+If you have [just] installed, simply clone this repository, navigate to the 
+repository folder, and run `just build-example` to build the example emulator.
+
+[just]: https://github.com/casey/just
 
 Run tests using `just test`.
 
-## Goals
+== Goals
 
 `ok` is a simple stack-based virtual machine designed with the following goals 
 in mind:
@@ -69,28 +72,24 @@ in mind:
 `ok` aspires to be useful for educational purposes (such as teaching low-level 
 concepts as well as compiler development) by being a simple compiler target.
 
-`ok` also aspires to run well on older or more constrained hardware- the original
-reference implementation was implemented on a 15-year old 32-bit machine with 
-only 1.5 gigabytes of RAM.
+`ok` also aspires to run well on older or more constrained hardware- 
+the original reference implementation was implemented on a 15-year old 32-bit
+machine with only 1.5 gigabytes of RAM.
 
-## Features
+== Features
 
 - Two 256-byte circular stacks
-- Up to 4 GiB of virtual RAM and 4 GiB of instruction memory
+- 24-bit computing!
+- Up to 4 GiB of virtual RAM and 4 GiB of instruction memory (by default only 16 MiB of each, however)
 - Configurable word sizes
 - 16 primitive stack operations
 - Simple C interoperability (VM devices are just C function calls)
 
-## More Info
+== More Info
 
-See `SPECIFICATION.md` for the VM specification (instruction set, 
+See the [specification] for the VM specification (instruction set, 
 memory model, etc.)
 
 The base virtual machine specification is the only "canonical" part of the `ok` 
 computing stack- creating your own unique assemblers, compilers, emulators, and 
 specific device specifications is recommended and highly encouraged.
-
-See also:
-
-- This repository on [Codeberg](https://codeberg.org/hitogata/ok)
-- This repository on [GitHub](https://github.com/goneal26/ok)

@@ -1,6 +1,6 @@
-# Specification (version 0.1.0)
+= Specification (version 0.1.0)
 
-## Bytecode
+== Bytecode
 
 Single-byte instruction words appear in the following format:
 
@@ -17,13 +17,28 @@ skipped.
 
 `a` is the variable argument byte counter, taking values from 1 to 4.
 
-`o` refers to the opcode, one of 16 stack-manipulation instructions:
+`o` refers to the opcode, one of 16 stack-manipulation instructions
 
-arg* => "arg" is a variable amount of bytes
+=== Opcodes
 
-argW => "arg" is the machine's word size (in # of bytes)
+> A note on stack notation:
 
-arg(1-4) => takes 1-4 bytes
+We use FORTH-like stack notation for each opcode, like `( a b -- c d )`, where 
+`b` is on the top of the stack *before* the operation, and `d` is on the top
+*after* the operation.
+
+Seeing a variable followed by a `*`, like `n*`, means that this stack value can
+be a variable amount of bytes depending on the `aa` bits of the opcode (1-4 
+bytes).
+
+Seeing a variable followed by a `W` (rather than a `*`) means that this stack
+value is a word (by default, 3 bytes, but this can be redefined with a C macro 
+if you include the `okvm.h` library and make your own emulator).
+
+Finally, seeing a variable in stack notation followed by a 1, 2, 3, or 4, means 
+that this stack value is that number of bytes.
+
+So, here are the opcodes:
 
 - `add` ( a* b* -- a+b* ) add 2 stack values
 - `and` ( a* b* -- a&b* ) bitwise-and two values
@@ -31,8 +46,8 @@ arg(1-4) => takes 1-4 bytes
 - `shf` ( n* s1 -- m* ) logically shift a value- high nibble is left shift, low nibble is right shift, with right shift occurring first
 - `cmp` ( a* b* -- cmp1 ) cmp = 0 if equal, 1 if a > b, 255 if a < b
 - `swp` ( a* b* -- b* a* ) swap top 2 values
-- `str` ( data* addrW -- ) store data at RAM[addr]
-- `lod` ( addrW -- data* ) fetch data at RAM[addr]
+- `str` ( data* addrW -- ) store data in RAM at addr
+- `lod` ( addrW -- data* ) fetch data from RAM at addr
 - `dup` ( n* -- n* n* ) duplicate top value
 - `drp` ( n* --  ) discard top value
 - `psh` ( data* -- ) push data to return stack
@@ -42,7 +57,7 @@ arg(1-4) => takes 1-4 bytes
 - `int` ( id* -- stat* ) device call/interrupt (see below)
 - `nop` ( -- ) no operation, regardless of `a` flag (although `b` flag still works)
 
-### The "int" opcode
+=== The "int" opcode
 
 `int` pops a byte off of the stack and interprets it as a device ID, where the
 high nibble refers to which device is being called, and the low nibble is an
@@ -52,7 +67,7 @@ At most 16 device functions can be registered to the VM at a time.
 
 Device functions are C functions that have the following signature:
 
-```c
+```
 unsigned char device_function(OkVM* vm, unsigned char op);
 ```
 
@@ -66,7 +81,7 @@ If `int` tries to call a device that doesn't exist, the VM will panic.
 You can call multiple devices with a single `int` instruction, using the `aa`
 bytecode flags.
 
-## Note on memory and the stack
+== Note on memory and the stack
 
-Integers are stored in *big-endian* order in RAM and ROM, and multi-byte integers
-on the stack have their low (most significant) byte closest to the top.
+Integers are stored in *big-endian* order in RAM and ROM, and multi-byte 
+integers on the stack have their low (most significant) byte closest to the top.
