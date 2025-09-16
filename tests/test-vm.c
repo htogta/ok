@@ -42,7 +42,7 @@ int main() {
 
 // testing asb for multi-byte ints
 void test_multibyte() {
-  unsigned char program[8] = {
+  uint8_t program[8] = {
     LIT2, // lit2
     0x09, // 0915 or 2325
     0x15, 
@@ -73,7 +73,7 @@ void test_multibyte() {
 // we doin big-endian now, coz then values are stored on the stack 
 // in a way that makes more sense.
 void test_be_stack() {
-  unsigned char program[] = {
+  uint8_t program[] = {
     LIT2,
     0x01, // 0x0102 is on the stack, i.e. 258
     0x02,
@@ -110,7 +110,7 @@ void test_be_stack() {
 #define JMP (0b10001100)
 
 void test_jmp() {
-  unsigned char program[4] = {
+  uint8_t program[4] = {
     LIT1,
     0x55, // 85 in decimal
     JMP,
@@ -137,7 +137,7 @@ void test_jmp() {
 #define AND1 (0b10000001)
 
 void test_skip() {
-  unsigned char program[10] = {
+  uint8_t program[10] = {
     LIT1,
     0, // stack is now [0]
     LIT1,
@@ -171,7 +171,7 @@ void test_skip_lit() {
   // lit2_skip should skip both the "lit" instruction AND its byte args 
   // when the top is not 255
 
-  unsigned char program[8] = {
+  uint8_t program[8] = {
     LIT1, // push 69
     69,
     LIT1, // push 0 
@@ -190,7 +190,7 @@ void test_skip_lit() {
     okvm_tick(&vm);
   }
 
-  unsigned char top = stack_pop(&(vm.dst));
+  uint8_t top = stack_pop(&(vm.dst));
   assert(top == 69);
 
   okvm_free(&vm);
@@ -201,7 +201,7 @@ void test_skip_lit() {
 #define NOP (0b10001111)
 
 void test_nop() {
-  unsigned char program[] = {
+  uint8_t program[] = {
     NOP, 
     NOP,
     0
@@ -228,7 +228,7 @@ void test_nop() {
 #define LIT3 (0b10101101)
 
 void test_lod() {
-  unsigned char program[6] = {
+  uint8_t program[6] = {
     LIT3,
     0,
     0x03,
@@ -249,7 +249,7 @@ void test_lod() {
     okvm_tick(&vm);
   }
 
-  unsigned int top = stack_popn(&(vm.dst), 2);
+  uint32_t top = stack_popn(&(vm.dst), 2);
   // printf("top = %4x\n", top); fflush(stdout);
   assert(top == 0xdead);
 
@@ -259,7 +259,7 @@ void test_lod() {
 }
 
 void test_str() {
-  unsigned char program[9] = {
+  uint8_t program[9] = {
     LIT2,
     0xab,
     0xcd,
@@ -292,7 +292,7 @@ void test_str() {
 #define RIGHT4_LEFT3 (0b00110100)
 
 void test_shf() {
-  unsigned char program[] = {
+  uint8_t program[] = {
     LIT2,
     0x01, // 258 on the stack (0x102)
     0x02,
@@ -324,13 +324,13 @@ void test_shf() {
 #define SERIAL_OUT_ID (0b00000000)
 
 // serial output device function:
-unsigned char serial_output(OkVM* vm, unsigned char op) {
+uint8_t serial_output(OkVM* vm, uint8_t op) {
   assert(op < 16);
   
   if (op == 0) {
     char ch = vm->ram[0x00babe];
     putchar(ch);
-    return (unsigned char) ch;
+    return (uint8_t) ch;
   } else {
     return 255;
   }
@@ -339,7 +339,7 @@ unsigned char serial_output(OkVM* vm, unsigned char op) {
 void test_int_stdout() {
   printf("Here is an \"at\" symbol: <");
   
-  unsigned char program[13] = {
+  uint8_t program[13] = {
     LIT1,
     0x40, // @ char
     LIT3,
@@ -367,7 +367,7 @@ void test_int_stdout() {
   
   assert(vm.status == OKVM_HALTED);
   
-  unsigned char top = stack_pop(&(vm.dst));
+  uint8_t top = stack_pop(&(vm.dst));
   // '@' should have been pushed onto the stack
   assert(top == 0x40);
 

@@ -3,7 +3,7 @@
 // okvm.h includes stdio already, so we don't need to include it again
 
 // device functions must have this signature
-unsigned char serial_output(OkVM* vm, unsigned char op);
+uint8_t serial_output(OkVM* vm, uint8_t op);
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 }
 
 // our device function just prints the byte at a specific RAM address
-unsigned char serial_output(OkVM* vm, unsigned char op) {
+uint8_t serial_output(OkVM* vm, uint8_t op) {
   // you don't have to use the "op" argument if you don't want to
   char c = vm->ram[0xbabe];
   putchar(c);

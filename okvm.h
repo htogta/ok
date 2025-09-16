@@ -1,19 +1,20 @@
 #ifndef OKVM_H
 #define OKVM_H
 
+#include <stdint.h>
 #include <stddef.h>
 
 // the okstack stuff
 typedef struct {
-  unsigned char sp;
-  unsigned char data[256];
+  uint8_t sp;
+  uint8_t data[256];
 } OkStack; 
 
 // stack handling functions (TODO rename to okstack?)
-void stack_push(OkStack* s, unsigned char i);
-unsigned char stack_pop(OkStack* s);
-void stack_pushn(OkStack* s, unsigned char n, unsigned int val);
-unsigned int stack_popn(OkStack* s, unsigned char n);
+void stack_push(OkStack* s, uint8_t i);
+uint8_t stack_pop(OkStack* s);
+void stack_pushn(OkStack* s, uint8_t n, uint32_t val);
+uint32_t stack_popn(OkStack* s, uint8_t n);
 OkStack stack_init();
 
 #define OKVM_WORD_SIZE (3)
@@ -36,18 +37,18 @@ typedef struct OkVM {
   OkStack rst; // return stack
   size_t pc; // program counter
   size_t num_devices; // track number of registered devices
-  unsigned char (*devices[16])(struct OkVM*, unsigned char op); // dev fn ptrs
-  unsigned char* ram;
-  unsigned char* rom;
+  uint8_t (*devices[16])(struct OkVM*, uint8_t op); // dev fn ptrs
+  uint8_t* ram;
+  uint8_t* rom;
   OkVM_status status;
 } OkVM;
 
 // NOTE: vm_init functions allocate memory!
-int okvm_init(OkVM* vm, unsigned char* program, size_t rom_size);
+int okvm_init(OkVM* vm, uint8_t* program, size_t rom_size);
 int okvm_init_from_file(OkVM* vm, const char* filepath);
 
 // "devices" are just callback functions that mutate the state of the VM
-int okvm_register_device(OkVM* vm, unsigned char (*fn)(OkVM*, unsigned char));
+int okvm_register_device(OkVM* vm, uint8_t (*fn)(OkVM*, uint8_t));
 OkVM_status okvm_tick(OkVM* vm);
 
 // this just frees the VM RAM and ROM, everything else (should) just be on
@@ -64,32 +65,32 @@ OkStack stack_init() {
   return (OkStack){}; // pre-init values to 0s
 }
 
-inline void stack_push(OkStack* s, unsigned char i) {
+inline void stack_push(OkStack* s, uint8_t i) {
   s->data[s->sp] = i;
   s->sp++;
 }
 
-inline unsigned char stack_pop(OkStack* s) {
-  unsigned char out = s->data[s->sp - 1];
+inline uint8_t stack_pop(OkStack* s) {
+  uint8_t out = s->data[s->sp - 1];
   s->data[s->sp--] = 0;
   return out;
 }
 
 // pop 1-4 bytes as a 32-bit int
 // NOTE: the top of the stack is the LOW BYTE
-inline unsigned int stack_popn(OkStack* s, unsigned char n) {
-  unsigned int out = 0;
+inline uint32_t stack_popn(OkStack* s, uint8_t n) {
+  uint32_t out = 0;
   for (int i = 0; i < n; i++) {
-    out |= (unsigned int)stack_pop(s) << (8 * i);
+    out |= (uint32_t)stack_pop(s) << (8 * i);
   }
   
   return out;
 }
 
 // push 1-4 bytes of a 32-bit int
-inline void stack_pushn(OkStack* s, unsigned char n, unsigned int val) {
+inline void stack_pushn(OkStack* s, uint8_t n, uint32_t val) {
   for (int i = n - 1; i >= 0; i--) {
-    unsigned char byte = (unsigned char) ((val >> (8 * i)) & 0xFF);
+    uint8_t byte = (uint8_t) ((val >> (8 * i)) & 0xFF);
     stack_push(s, byte);
   }
 }
@@ -107,7 +108,7 @@ inline void stack_pushn(OkStack* s, unsigned char n, unsigned int val) {
 
 // initialize an instance of the VM (ALLOCATES MEMORY !!!)
 // return nonzero if failed
-int okvm_init(OkVM* vm, unsigned char* program, size_t rom_size) { // NOTE: allocates memory!
+int okvm_init(OkVM* vm, uint8_t* program, size_t rom_size) { // NOTE: allocates memory!
   vm->dst = stack_init();
   vm->rst = stack_init();
   vm->pc = 0;
@@ -120,11 +121,11 @@ int okvm_init(OkVM* vm, unsigned char* program, size_t rom_size) { // NOTE: allo
   }
 
   // allocate vm ram (TODO don't allocate it all at once? It's a lot)
-  vm->ram = (unsigned char*) calloc(OKVM_MEM_SIZE, sizeof(unsigned char));
+  vm->ram = (uint8_t*) calloc(OKVM_MEM_SIZE, sizeof(uint8_t));
   if (vm->ram == NULL) return 1;
   
   // allocate vm rom (TODO see note above)
-  vm->rom = (unsigned char*) calloc(OKVM_MEM_SIZE, sizeof(unsigned char));
+  vm->rom = (uint8_t*) calloc(OKVM_MEM_SIZE, sizeof(uint8_t));
   if (vm->rom == NULL) return 1;
 
   // copy program to rom
@@ -149,10 +150,10 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   if (file_size > (1 << (OKVM_WORD_SIZE * 8))) return 1;
 
   // file bytes are read directly into ROM
-  vm->rom = (unsigned char*) calloc(OKVM_MEM_SIZE, sizeof(unsigned char));
+  vm->rom = (uint8_t*) calloc(OKVM_MEM_SIZE, sizeof(uint8_t));
   if (vm->rom == NULL) return 1;
   
-  size_t bytes_read = fread(vm->rom, sizeof(unsigned char), file_size, fptr);
+  size_t bytes_read = fread(vm->rom, sizeof(uint8_t), file_size, fptr);
   if (bytes_read < file_size) return 1;
 
   fclose(fptr); // now we're done with the file stuff
@@ -170,13 +171,13 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   }
 
   // allocate vm ram (TODO don't allocate it all at once? It's a lot)
-  vm->ram = (unsigned char*) calloc(OKVM_MEM_SIZE, sizeof(unsigned char));
+  vm->ram = (uint8_t*) calloc(OKVM_MEM_SIZE, sizeof(uint8_t));
   if (vm->ram == NULL) return 1;
 
   return 0; // success!
 }
 
-int okvm_register_device(OkVM* vm, unsigned char (*fn) (OkVM*, unsigned char)) {
+int okvm_register_device(OkVM* vm, uint8_t (*fn) (OkVM*, uint8_t)) {
   // NOTE: nonzero exit code means failure
 
   // ensure that we have registered less than 16 devices
@@ -192,7 +193,7 @@ int okvm_register_device(OkVM* vm, unsigned char (*fn) (OkVM*, unsigned char)) {
 // defining fetch as a macro, it's faster
 #define FETCH(vm) ((vm)->rom[(vm)->pc++])
 
-static void execute(OkVM* vm, unsigned char instr);
+static void execute(OkVM* vm, uint8_t instr);
 
 // one clock cycle of the VM
 OkVM_status okvm_tick(OkVM* vm) {
@@ -211,30 +212,30 @@ void okvm_free(OkVM* vm) {
 // triggering a device with a byte id:
 //   - high nibble is the device index (0-15)
 //   - low nibble is the operation
-static void trigger_device(OkVM* vm, unsigned char id) {
-  unsigned char index = (id & 0xf0) >> 4;
-  unsigned char op = (id & 0x0f);
+static void trigger_device(OkVM* vm, uint8_t id) {
+  uint8_t index = (id & 0xf0) >> 4;
+  uint8_t op = (id & 0x0f);
 
   if (vm->devices[index] == NULL) {
     vm->status = OKVM_PANIC;
     return;
   } else {
-    unsigned char (*fn)(OkVM*, unsigned char) = vm->devices[index];
-    unsigned char result = fn(vm, op);
+    uint8_t (*fn)(OkVM*, uint8_t) = vm->devices[index];
+    uint8_t result = fn(vm, op);
     
     // push the result onto the stack
     stack_push(&(vm->dst), result);
   }
 }
 
-static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize, unsigned char skip_flag) {
+static void handle_opcode(OkVM* vm, uint8_t opcode, uint8_t argsize, uint8_t skip_flag) {
   
   // pre-declaring these
-  unsigned int a, b;
+  uint32_t a, b;
   size_t addr;
-  unsigned int n;
-  unsigned char byte;
-  unsigned char buff[4] = {0}; // using this just for the `int` opcode
+  uint32_t n;
+  uint8_t byte;
+  uint8_t buff[4] = {0}; // using this just for the `int` opcode
 
   switch (opcode) {
     case 0: // add
@@ -485,7 +486,7 @@ static void handle_opcode(OkVM* vm, unsigned char opcode, unsigned char argsize,
   }
 }
 
-static void execute(OkVM* vm, unsigned char instr) {
+static void execute(OkVM* vm, uint8_t instr) {
   // instruction binary format: 1baaoooo
 
   // handling 1 at start
@@ -495,10 +496,10 @@ static void execute(OkVM* vm, unsigned char instr) {
   }
   
   // decoding "a" -> the argument size flag
-  unsigned char argsize = (instr & 0b00110000) >> 4;
+  uint8_t argsize = (instr & 0b00110000) >> 4;
   
   // decoding opcodes
-  unsigned char opcode = instr & 0x000f;
+  uint8_t opcode = instr & 0x000f;
 
   // split this off for brevity
   handle_opcode(vm, opcode, argsize, (instr & 0b01000000) != 0); 

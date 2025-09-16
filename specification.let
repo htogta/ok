@@ -68,7 +68,7 @@ At most 16 device functions can be registered to the VM at a time.
 Device functions are C functions that have the following signature:
 
 ```
-unsigned char device_function(OkVM* vm, unsigned char op);
+uint8_t device_function(OkVM* vm, uint8_t op);
 ```
 
 Where "op" is the low nibble of the byte that you pass to the `int` instruction.
