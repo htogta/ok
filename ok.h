@@ -1,19 +1,19 @@
-#ifndef OKVM_H
-#define OKVM_H
+#ifndef OK_H
+#define OK_H
 
 #include <stdint.h>
 #include <stddef.h>
 
-#define OKVM_WORD_SIZE (3)
+#define OK_WORD_SIZE (3)
 
-#define OKVM_MAX_DEVICES (16)
+#define OK_MAX_DEVICES (16)
 
-#define OKVM_VERSION ("0.1.0")
+#define OK_VERSION ("0.1.0")
 
 typedef enum {
-  OKVM_RUNNING,
-  OKVM_HALTED,
-  OKVM_PANIC, // fatal error, eg divide by 0
+  OK_RUNNING,
+  OK_HALTED,
+  OK_PANIC, // fatal error, eg divide by 0
 } OkVM_status;
 
 // forward-declaring OkVM 
@@ -42,7 +42,7 @@ OkVM_status okvm_tick(OkVM* vm);
 // the stack.
 void okvm_free(OkVM* vm);
 
-#ifdef OKVM_IMPLEMENTATION
+#ifdef OK_IMPLEMENTATION
 
 
 // main (data) stack handling
@@ -114,7 +114,7 @@ static inline void rstack_pushn(OkVM* vm, uint8_t n, uint32_t val) {
 #include <stdio.h>
 // for file handling in okvm_init_from_file
 
-#define OKVM_MEM_SIZE (1 << (OKVM_WORD_SIZE * 8))
+#define OK_MEM_SIZE (1 << (OK_WORD_SIZE * 8))
 
 // initialize an instance of the VM (ALLOCATES MEMORY !!!)
 // return nonzero if failed
@@ -126,19 +126,19 @@ int okvm_init(OkVM* vm, uint8_t* program, size_t rom_size) { // NOTE: allocates 
   
   vm->pc = 0;
   vm->num_devices = 0;
-  vm->status = OKVM_HALTED;
+  vm->status = OK_HALTED;
 
   // ensure devices array filled with nulls
-  for (int i = 0; i < OKVM_MAX_DEVICES; i++) {
+  for (int i = 0; i < OK_MAX_DEVICES; i++) {
     vm->devices[i] = NULL;
   }
 
   // allocate vm ram (TODO don't allocate it all at once? It's a lot)
-  vm->ram = (uint8_t*) calloc(OKVM_MEM_SIZE, sizeof(uint8_t));
+  vm->ram = (uint8_t*) calloc(OK_MEM_SIZE, sizeof(uint8_t));
   if (vm->ram == NULL) return 1;
   
   // allocate vm rom (TODO see note above)
-  vm->rom = (uint8_t*) calloc(OKVM_MEM_SIZE, sizeof(uint8_t));
+  vm->rom = (uint8_t*) calloc(OK_MEM_SIZE, sizeof(uint8_t));
   if (vm->rom == NULL) return 1;
 
   // copy program to rom
@@ -160,10 +160,10 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   rewind(fptr);
 
   // fail if the file's too big to fit into ROM
-  if (file_size > (1 << (OKVM_WORD_SIZE * 8))) return 1;
+  if (file_size > (1 << (OK_WORD_SIZE * 8))) return 1;
 
   // file bytes are read directly into ROM
-  vm->rom = (uint8_t*) calloc(OKVM_MEM_SIZE, sizeof(uint8_t));
+  vm->rom = (uint8_t*) calloc(OK_MEM_SIZE, sizeof(uint8_t));
   if (vm->rom == NULL) return 1;
   
   size_t bytes_read = fread(vm->rom, sizeof(uint8_t), file_size, fptr);
@@ -178,15 +178,15 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   }
   vm->pc = 0;
   vm->num_devices = 0;
-  vm->status = OKVM_HALTED;
+  vm->status = OK_HALTED;
 
   // ensure devices array filled with nulls
-  for (int i = 0; i < OKVM_MAX_DEVICES; i++) {
+  for (int i = 0; i < OK_MAX_DEVICES; i++) {
     vm->devices[i] = NULL;
   }
 
   // allocate vm ram (TODO don't allocate it all at once? It's a lot)
-  vm->ram = (uint8_t*) calloc(OKVM_MEM_SIZE, sizeof(uint8_t));
+  vm->ram = (uint8_t*) calloc(OK_MEM_SIZE, sizeof(uint8_t));
   if (vm->ram == NULL) return 1;
 
   return 0; // success!
@@ -196,7 +196,7 @@ int okvm_register_device(OkVM* vm, uint8_t (*fn) (OkVM*, uint8_t)) {
   // NOTE: nonzero exit code means failure
 
   // ensure that we have registered less than 16 devices
-  if (vm->num_devices >= OKVM_MAX_DEVICES) return 1;
+  if (vm->num_devices >= OK_MAX_DEVICES) return 1;
 
   // now register it!
   vm->devices[vm->num_devices] = fn;
@@ -233,7 +233,7 @@ static void trigger_device(OkVM* vm, uint8_t id) {
   uint8_t op = (id & 0x0f);
 
   if (vm->devices[index] == NULL) {
-    vm->status = OKVM_PANIC;
+    vm->status = OK_PANIC;
     return;
   } else {
     uint8_t (*fn)(OkVM*, uint8_t) = vm->devices[index];
@@ -362,14 +362,14 @@ static void handle_opcode(OkVM* vm, uint8_t opcode, uint8_t argsize, uint8_t ski
       }
       break;
     case 6: // str
-      addr = (size_t) stack_popn(vm, OKVM_WORD_SIZE);
+      addr = (size_t) stack_popn(vm, OK_WORD_SIZE);
       if (skip_flag) {
         if (stack_pop(vm) != 0) {
           for (int i = argsize; i >= 0; i--) {
             vm->ram[addr + i] = stack_pop(vm); 
           }
         } else { // restore
-          stack_pushn(vm, OKVM_WORD_SIZE, addr);
+          stack_pushn(vm, OK_WORD_SIZE, addr);
         }
       } else {
         for (int i = argsize; i >= 0; i--) {
@@ -378,14 +378,14 @@ static void handle_opcode(OkVM* vm, uint8_t opcode, uint8_t argsize, uint8_t ski
       }
       break;
     case 7: // lod
-      addr = (size_t) stack_popn(vm, OKVM_WORD_SIZE);
+      addr = (size_t) stack_popn(vm, OK_WORD_SIZE);
       if (skip_flag) {
         if (stack_pop(vm) != 0) {
           for (int i = 0; i < argsize + 1; i++) {
             stack_push(vm, vm->ram[addr + i]);
           }
         } else { // restore
-          stack_pushn(vm, OKVM_WORD_SIZE, addr);
+          stack_pushn(vm, OK_WORD_SIZE, addr);
         }
       } else {
         for (int i = 0; i < argsize + 1; i++) {
@@ -507,7 +507,7 @@ static void execute(OkVM* vm, uint8_t instr) {
 
   // handling 1 at start
   if ((instr & 0b10000000) == 0) {
-    vm->status = OKVM_HALTED;
+    vm->status = OK_HALTED;
     return;
   }
   

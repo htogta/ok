@@ -1,5 +1,5 @@
-#define OKVM_IMPLEMENTATION
-#include "../okvm.h"
+#define OK_IMPLEMENTATION
+#include "../ok.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -57,8 +57,8 @@ void test_multibyte() {
   OkVM vm;
   okvm_init(&vm, program, 8);
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
   
@@ -87,8 +87,8 @@ void test_be_stack() {
   OkVM vm;
   okvm_init(&vm, program, sizeof(program));
   
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
 
@@ -121,8 +121,8 @@ void test_jmp() {
   OkVM vm;
   okvm_init(&vm, program, 4);
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
   
@@ -153,8 +153,8 @@ void test_skip() {
   OkVM vm;
   okvm_init(&vm, program, 10);
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
 
@@ -186,8 +186,8 @@ void test_skip_lit() {
   OkVM vm;
   okvm_init(&vm, program, 8);
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
 
@@ -211,8 +211,8 @@ void test_nop() {
   OkVM vm;
   okvm_init(&vm, program, sizeof(program));
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
 
@@ -245,8 +245,8 @@ void test_lod() {
   vm.ram[0x3e7] = 0xde; // note 0x03e7 is 999 in hex 
   vm.ram[1000] = 0xad;
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
 
@@ -275,8 +275,8 @@ void test_str() {
   OkVM vm;
   okvm_init(&vm, program, 9);
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
 
@@ -306,8 +306,8 @@ void test_shf() {
   OkVM vm;
   okvm_init(&vm, program, sizeof(program));
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
 
@@ -361,12 +361,12 @@ void test_int_stdout() {
   int reg_success = okvm_register_device(&vm, serial_output);
   assert(reg_success == 0);
 
-  vm.status = OKVM_RUNNING;
-  while (vm.status == OKVM_RUNNING) {
+  vm.status = OK_RUNNING;
+  while (vm.status == OK_RUNNING) {
     okvm_tick(&vm);
   }
   
-  assert(vm.status == OKVM_HALTED);
+  assert(vm.status == OK_HALTED);
   
   uint8_t top = stack_pop(&vm);
   // '@' should have been pushed onto the stack
