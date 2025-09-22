@@ -325,16 +325,10 @@ void test_shf() {
 #define SERIAL_OUT_ID (0b00000000)
 
 // serial output device function:
-uint8_t serial_output(OkVM* vm, uint8_t op) {
-  assert(op < 16);
-  
-  if (op == 0) {
-    char ch = vm->ram[0x00babe];
-    putchar(ch);
-    return (uint8_t) ch;
-  } else {
-    return 255;
-  }
+uint8_t serial_output(uint8_t* ram, uint8_t* rom) {
+  char ch = ram[0x00babe];
+  putchar(ch);
+  return (uint8_t) ch;
 }
 
 void test_int_stdout() {
@@ -349,7 +343,7 @@ void test_int_stdout() {
     0xbe,
     STR1, // write to magic number
     LIT1,
-    SERIAL_OUT_ID,
+    55,
     INT1, // flush to output
     0
   };
@@ -358,7 +352,7 @@ void test_int_stdout() {
   okvm_init(&vm, program, 13);
 
   // registering serial device
-  int reg_success = okvm_register_device(&vm, serial_output);
+  int reg_success = okvm_register_device(&vm, serial_output, 55);
   assert(reg_success == 0);
 
   vm.status = OK_RUNNING;

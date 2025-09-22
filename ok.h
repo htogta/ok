@@ -16,6 +16,9 @@ typedef enum {
   OK_PANIC, // fatal error, eg divide by 0
 } OkVM_status;
 
+// type for VM device function pointers
+typedef uint8_t (*OkDevice)(uint8_t*, uint8_t*);
+
 // forward-declaring OkVM 
 typedef struct OkVM {
   uint8_t dsp; // data stack pointer
@@ -24,7 +27,8 @@ typedef struct OkVM {
   uint8_t rst[256]; // return stack
   size_t pc; // program counter
   size_t num_devices; // track number of registered devices
-  uint8_t (*devices[16])(struct OkVM*, uint8_t op); // dev fn ptrs
+  uint8_t device_ports[OK_MAX_DEVICES];
+  OkDevice devices[OK_MAX_DEVICES]; // dev fn ptrs
   uint8_t* ram;
   uint8_t* rom;
   OkVM_status status;
@@ -35,7 +39,7 @@ int okvm_init(OkVM* vm, uint8_t* program, size_t rom_size);
 int okvm_init_from_file(OkVM* vm, const char* filepath);
 
 // "devices" are just callback functions that mutate the state of the VM
-int okvm_register_device(OkVM* vm, uint8_t (*fn)(OkVM*, uint8_t));
+int okvm_register_device(OkVM* vm, OkDevice device_fn, uint8_t port);
 OkVM_status okvm_tick(OkVM* vm);
 
 // this just frees the VM RAM and ROM, everything else (should) just be on
@@ -43,7 +47,6 @@ OkVM_status okvm_tick(OkVM* vm);
 void okvm_free(OkVM* vm);
 
 #ifdef OK_IMPLEMENTATION
-
 
 // main (data) stack handling
 static inline void stack_push(OkVM* vm, uint8_t i) {
@@ -192,14 +195,14 @@ int okvm_init_from_file(OkVM* vm, const char* filepath) {
   return 0; // success!
 }
 
-int okvm_register_device(OkVM* vm, uint8_t (*fn) (OkVM*, uint8_t)) {
-  // NOTE: nonzero exit code means failure
-
+// NOTE: nonzero exit code means failure
+int okvm_register_device(OkVM* vm, OkDevice device_fn, uint8_t port) {  
   // ensure that we have registered less than 16 devices
   if (vm->num_devices >= OK_MAX_DEVICES) return 1;
 
   // now register it!
-  vm->devices[vm->num_devices] = fn;
+  vm->device_ports[vm->num_devices] = port;
+  vm->devices[vm->num_devices] = device_fn;
   vm->num_devices++;
   
   return 0; // return 0 upon success
@@ -225,19 +228,30 @@ void okvm_free(OkVM* vm) {
   free(vm->rom);
 }
 
-// triggering a device with a byte id:
-//   - high nibble is the device index (0-15)
-//   - low nibble is the operation
-static void trigger_device(OkVM* vm, uint8_t id) {
-  uint8_t index = (id & 0xf0) >> 4;
-  uint8_t op = (id & 0x0f);
+// triggering a device with its port in the zero-page
+static void trigger_device(OkVM* vm, uint8_t port) {
+  int port_found = 0; // used as a bool to see if we find it
+  size_t dev_index = 0;
+  for (size_t i = 0; i < vm->num_devices; i++) {
+    if (vm->device_ports[i] == port) {
+      port_found = 1;
+      dev_index = i;
+      break;
+    }
+  }
 
-  if (vm->devices[index] == NULL) {
+  // if port not found, panic and return
+  if (!port_found) {
+    vm->status = OK_PANIC;
+    return;
+  }
+
+  if (vm->devices[dev_index] == NULL) { // if it somehow is null
     vm->status = OK_PANIC;
     return;
   } else {
-    uint8_t (*fn)(OkVM*, uint8_t) = vm->devices[index];
-    uint8_t result = fn(vm, op);
+    OkDevice device = vm->devices[dev_index];
+    uint8_t result = device(vm->ram, vm->rom);
     
     // push the result onto the stack
     stack_push(vm, result);
