@@ -27,6 +27,7 @@ int main() {
   test_lod();
   test_str();
   test_int_stdout();
+  // TODO test return stack?
 
   printf("Done.\n");
   
@@ -62,7 +63,7 @@ void test_multibyte() {
   }
   
   // 5312 should now be on the stack top:
-  assert(stack_popn(&(vm.dst), 2) == 5312);
+  assert(stack_popn(&vm, 2) == 5312);
   //printf("Stack top: %d\n", stack_popn(&(vm.dst), 2));
   
   okvm_free(&vm);
@@ -92,13 +93,13 @@ void test_be_stack() {
   }
 
   // unsigned short top = stack_popn(&(vm.dst), 2);
-  assert(stack_popn(&(vm.dst), 2) == 0x102); // make sure we got the right number
+  assert(stack_popn(&vm, 2) == 0x102); // make sure we got the right number
   
   // popping one byte of that value should give me the LEAST significant byte,
   // i.e. 0x02
-  assert(stack_pop(&(vm.dst)) == 0x02);
+  assert(stack_pop(&vm) == 0x02);
   // then 0x01
-  assert(stack_pop(&(vm.dst)) == 0x01);
+  assert(stack_pop(&vm) == 0x01);
 
   okvm_free(&vm);
 
@@ -157,7 +158,7 @@ void test_skip() {
     okvm_tick(&vm);
   }
 
-  assert(stack_pop(&(vm.dst)) == (3 & 9));
+  assert(stack_pop(&vm) == (3 & 9));
 
   okvm_free(&vm);
 
@@ -190,7 +191,7 @@ void test_skip_lit() {
     okvm_tick(&vm);
   }
 
-  uint8_t top = stack_pop(&(vm.dst));
+  uint8_t top = stack_pop(&vm);
   assert(top == 69);
 
   okvm_free(&vm);
@@ -215,7 +216,7 @@ void test_nop() {
     okvm_tick(&vm);
   }
 
-  assert(vm.dst.sp == 0);
+  assert(vm.dsp == 0);
   assert(vm.pc == 3);
 
   okvm_free(&vm);
@@ -249,7 +250,7 @@ void test_lod() {
     okvm_tick(&vm);
   }
 
-  uint32_t top = stack_popn(&(vm.dst), 2);
+  uint32_t top = stack_popn(&vm, 2);
   // printf("top = %4x\n", top); fflush(stdout);
   assert(top == 0xdead);
 
@@ -310,7 +311,7 @@ void test_shf() {
     okvm_tick(&vm);
   }
 
-  unsigned short top = (unsigned short) stack_popn(&(vm.dst), 2);
+  unsigned short top = (unsigned short) stack_popn(&vm, 2);
   // printf("TOP = %d\n", top); fflush(stdout);
   assert(top == ((258 >> 4) << 3));
 
@@ -367,7 +368,7 @@ void test_int_stdout() {
   
   assert(vm.status == OKVM_HALTED);
   
-  uint8_t top = stack_pop(&(vm.dst));
+  uint8_t top = stack_pop(&vm);
   // '@' should have been pushed onto the stack
   assert(top == 0x40);
 
