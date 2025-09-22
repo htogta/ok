@@ -1,6 +1,7 @@
 # ignore all test binaries BUT keep the tests dir
 tests/*
 !tests/test-vm.c
+!tests/test-helpers.c
 
 # same for examples
 examples/*

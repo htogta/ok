@@ -46,7 +46,30 @@ OkVM_status okvm_tick(OkVM* vm);
 // the stack.
 void okvm_free(OkVM* vm);
 
+// these are some helper functions included in the API for storing and fetching
+// n-byte big-endian values at an address in a byte buffer (like VM RAM)
+uint32_t ok_fetch_bytes(uint8_t n, size_t addr, uint8_t* buffer); // n bytes from buffer[addr]
+void ok_set_bytes(uint32_t number, uint8_t n, size_t addr, uint8_t* buffer); // BUFFER[addr] = number with n bytes
+
 #ifdef OK_IMPLEMENTATION
+
+// fetch n bytes from buffer[addr]
+inline uint32_t ok_fetch_bytes(uint8_t n, size_t addr, uint8_t* buffer) {
+  uint32_t result = 0;
+  for (uint8_t i = 0; i < n; i++) {
+    result = (result << 8) | buffer[addr + i];
+  }
+  return result;
+}
+
+// buffer[addr] = number with n bytes
+inline void ok_set_bytes(uint32_t number, uint8_t n, size_t addr, uint8_t* buffer) {
+  for (uint8_t i = 0; i < n; i++) {
+    buffer[addr + n - 1 - i] = (uint8_t) (number & 0xff);
+    number >>= 8;
+  }
+}
+
 
 // main (data) stack handling
 static inline void stack_push(OkVM* vm, uint8_t i) {
