@@ -59,24 +59,22 @@ So, here are the opcodes:
 
 === The "int" opcode
 
-`int` pops a byte off of the stack and interprets it as a device ID, where the
-high nibble refers to which device is being called, and the low nibble is an
-"opcode" (0-15) that gets passed as an argument to that device function. 
+`int` pops a byte off of the stack and interprets it as a device port- basically 
+a magic address between 0x00 and 0xff that refers to a specific device. When 
+this port is called upon with an `int` instruction, it calls a C function that is
+registered to that port at VM startup- if no such function exists, the VM panics.
 
 At most 16 device functions can be registered to the VM at a time.
 
 Device functions are C functions that have the following signature:
 
 ```
-uint8_t device_function(OkVM* vm, uint8_t op);
+uint8_t device_function(uint8_t* ram, uint8_t* rom);
 ```
 
-Where "op" is the low nibble of the byte that you pass to the `int` instruction.
-You don't *have* to use the `op` argument if you don't want to. The byte that 
-is returned by the device function gets pushed back onto the VM stack after the
-function is called, and you can define it however you wish.
-
-If `int` tries to call a device that doesn't exist, the VM will panic.
+Devices can only manipulate the VM's RAM and ROM. After the device is triggered,
+the `int` instruction pushes the return value of this function, which can be used
+like a status code.
 
 You can call multiple devices with a single `int` instruction, using the `aa`
 bytecode flags.
