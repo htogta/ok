@@ -36,9 +36,9 @@ void ok_init(OkState* s);
 OkStatus ok_tick(OkState* s);
 
 // some helper functions that the user may use for fetching big-endian
-// values from byte buffers (RAM or program memory), TODO
-// uint32_t ok_get_bytes(uint8_t* buffer, size_t index, uint8_t amt);
-// void ok_set_bytes(uint8_t* buffer, size_t index, uint8_t amt, uint32_t val);
+// values from byte buffers (RAM or program memory)
+uint32_t ok_get_bytes(uint8_t* buffer, size_t index, uint8_t amt);
+void ok_set_bytes(uint8_t* buffer, size_t index, uint8_t amt, uint32_t val);
 
 // this helper function opens a file at a path and loads it into a byte buffer
 // it loads the bytes from the file into the buffer, with the file's first byte
@@ -48,6 +48,27 @@ int ok_load_file(uint8_t* buffer, size_t start, const char* filepath);
 #ifdef OK_IMPLEMENTATION // VM implementation
 
 #include <stdio.h> // for ok_load_file
+
+// helper functions for reading/writing values in buffers
+
+// get an amt-wide value at index
+uint32_t ok_get_bytes(uint8_t* buffer, size_t index, uint8_t amt) {
+  uint32_t out = 0;
+
+  for (uint8_t i = 0; i < amt; i++) {
+    out = (out << 8) | buffer[index + i];
+  }
+
+  return out;
+}
+
+// set buffer at index to val, where val is amt bytes wide
+void ok_set_bytes(uint8_t* buffer, size_t index, uint8_t amt, uint32_t val) {
+  for (int i = amt - 1; i >= 0; i--) {
+    buffer[index + i] = (uint8_t) (val & 0xff);
+    val >>= 8;
+  }
+}
 
 // helper function for loading a file at a path
 int ok_load_file(uint8_t* buffer, size_t start, const char* filepath) {
