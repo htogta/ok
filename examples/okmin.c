@@ -1,9 +1,24 @@
 #define OK_IMPLEMENTATION
 #include "../ok.h"
-// okvm.h includes stdio already, so we don't need to include it again
+#include <stdio.h>
+#include <stdlib.h>
 
-// device functions must have this signature
-uint8_t serial_output(uint8_t* ram, uint8_t* rom);
+// defining the buffers for the VM to use
+static uint8_t* ram;
+static uint8_t* program;
+
+uint8_t ok_mem_read(size_t address) {
+  return ram[address];
+}
+
+void ok_mem_write(size_t address, uint8_t val) {
+  if (address == 0x00babe) putchar(val); // memory-mapped putchar
+  ram[address] = val;
+}
+
+uint8_t ok_fetch(size_t address) {
+  return program[address];
+}
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
@@ -11,25 +26,27 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  OkVM vm;
-  int init_failed = okvm_init_from_file(&vm, argv[1]); // allocates memory
-  if (init_failed) return 1;
-  
-  // registering an external device
-  // since the port is 55, the opcodes "#37 INT1" will trigger the device
-  int reg_failed = okvm_register_device(&vm, serial_output, 55);
-  if (reg_failed) return 1;
+  // allocate the ram and program buffers
+  ram = calloc(OK_MEM_SIZE, 1);
+  program = calloc(OK_MEM_SIZE, 1);
+  if (!ram || !program) {
+    free(ram);
+    free(program);
+    return 1;
+  };
 
-  vm.status = OK_RUNNING;
-  while (vm.status == OK_RUNNING) okvm_tick(&vm);
+  // load program file into the program buffer
+  if (!ok_load_file(program, 0, argv[1])) {
+    free(ram);
+    free(program);
+    return 1; 
+  }
 
-  okvm_free(&vm); // this frees the memory allocated at init
+  OkState vm;
+  ok_init(&vm);
+  while (vm.status == OK_RUNNING) ok_tick(&vm);
+
+  free(ram);
+  free(program);
   return vm.status != OK_HALTED;
-}
-
-// our device function just prints the byte at a specific RAM address
-uint8_t serial_output(uint8_t* ram, uint8_t* rom) {
-  char c = ram[0x37]; // here is that "magic" address
-  putchar(c);
-  return c;
 }
