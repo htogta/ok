@@ -1,8 +1,17 @@
-# ignore all test binaries BUT keep the tests dir
-tests/*
-!tests/test-vm.c
-!tests/test-helpers.c
+# ignore example binary
+examples/okmin
 
-# same for examples
-examples/*
-!examples/okmin.c
+# ignore binaries for test cases
+tests/test-be-stack
+tests/test-fet
+tests/test-helpers
+tests/test-jmp
+tests/test-lod
+tests/test-multibyte
+tests/test-nop
+tests/test-putchar
+tests/test-shf
+tests/test-skip-lit
+tests/test-skip
+tests/test-str
+tests/test-template
