@@ -1,7 +1,12 @@
 build-example:
   cc examples/okmin.c -o examples/okmin
 
-test: test-be-stack test-fet test-jmp test-lod test-multibyte test-nop test-putchar test-shf test-skip-lit test-skip test-str
+test: test-helpers test-be-stack test-fet test-jmp test-lod test-multibyte test-nop test-putchar test-shf test-skip-lit test-skip test-str
+
+@test-helpers:
+  cc tests/test-helpers.c -o tests/test-helpers
+  ./tests/test-helpers
+  rm tests/test-helpers
 
 @test-be-stack:
   cc tests/test-be-stack.c -o tests/test-be-stack
