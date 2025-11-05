@@ -73,32 +73,32 @@ void ok_set_bytes(uint8_t* buffer, size_t index, uint8_t amt, uint32_t val) {
 // helper function for loading a file at a path
 int ok_load_file(uint8_t* buffer, size_t start, const char* filepath) {
   FILE* f = fopen(filepath, "rb");
-  if (!f) return 1;
+  if (!f) return 0;
 
   if (fseek(f, 0, SEEK_END) != 0) {
     fclose(f);
-    return 1;
+    return 0;
   }
   long filesize = ftell(f);
   if (filesize < 0) {
     fclose(f);
-    return 1;
+    return 0;
   }
   rewind(f);
 
   // check bounds, we know the buffer is at most OK_MEM_SIZE bytes
   if ((size_t)filesize + start > OK_MEM_SIZE) {
     fclose(f);
-    return 1;
+    return 0;
   }
 
   // read file into buffer at offset "start"
   size_t read = fread(buffer + start, 1, filesize, f);
   fclose(f);
 
-  if (read != (size_t)filesize) return 1;
+  if (read != (size_t)filesize) return 0;
 
-  return 0;
+  return 1;
 }
 
 // circular stack functions

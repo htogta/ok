@@ -44,8 +44,8 @@ So, here are the opcodes:
 - `and` ( a* b* -- a&b* ) bitwise-and two values
 - `xor` ( a* b* -- a^b* ) xor two values
 - `shf` ( n* s1 -- m* ) logically shift a value- high nibble is left shift, low nibble is right shift, with right shift occurring first
-- `cmp` ( a* b* -- cmp1 ) cmp = 0 if equal, 1 if a > b, 255 if a < b
 - `swp` ( a* b* -- b* a* ) swap top 2 values
+- `cmp` ( a* b* -- cmp1 ) cmp = 0 if equal, 1 if a > b, 255 if a < b
 - `str` ( data* addrW -- ) store data in RAM at addr
 - `lod` ( addrW -- data* ) fetch data from RAM at addr
 - `dup` ( n* -- n* n* ) duplicate top value
@@ -54,7 +54,7 @@ So, here are the opcodes:
 - `pop` ( -- data* ) pop data from return stack
 - `jmp` ( dest* -- ) jump to dest
 - `lit` ( -- val* ) push immediate bytes
-- `int` ( id* -- stat* ) device call/interrupt (see below)
+- `fet` ( addrW -- data* ) fetch data from ROM at addr
 - `nop` ( -- ) no operation, regardless of `a` flag (although `b` flag still works)
 
 === The "int" opcode

@@ -17,6 +17,7 @@ void ok_mem_write(size_t address, uint8_t val) {
 }
 
 uint8_t ok_fetch(size_t address) {
+  // printf("GOT: %2x\n", program[address]);
   return program[address];
 }
 
@@ -27,6 +28,8 @@ int main(int argc, char* argv[]) {
   }
 
   // allocate the ram and program buffers
+  printf("Allocating memory...\n");
+  
   ram = calloc(OK_MEM_SIZE, 1);
   program = calloc(OK_MEM_SIZE, 1);
   if (!ram || !program) {
@@ -36,12 +39,16 @@ int main(int argc, char* argv[]) {
   };
 
   // load program file into the program buffer
+  printf("Loading program...\n");
+  
   if (!ok_load_file(program, 0, argv[1])) {
     free(ram);
     free(program);
     return 1; 
   }
 
+  printf("Starting VM...\n");
+  
   OkState vm;
   ok_init(&vm);
   while (vm.status == OK_RUNNING) ok_tick(&vm);
